@@ -1,5 +1,7 @@
 import streamlit as st
 from nlp import extract_signals
+from risk_model import calculate_risk
+
 
 st.set_page_config(
     page_title="NovaMind – Retail Risk Agent",
@@ -39,11 +41,22 @@ if st.button("Analyze Risk"):
     st.subheader("Extracted Signals")
     st.json(signals)
 
-    st.metric(label="Risk Score", value="--")
-    st.metric(label="Risk Category", value="--")
+    score, category = calculate_risk(signals)
+
+    st.metric(label="Risk Score", value=score)
+    st.metric(label="Risk Category", value=category)
 
     st.markdown("### Explanation")
-    st.write("NLP signals extracted. Risk scoring pending.")
+    st.write(
+        f"The risk score is based on {signals['keyword_count']} keyword signals, "
+        f"urgency flag = {signals['urgency_flag']}, "
+        f"and text length = {signals['text_length']}."
+    )
 
     st.markdown("### Recommended Action")
-    st.write("Pending analysis.")
+    if category == "High":
+        st.write("Block transaction and escalate for manual review.")
+    elif category == "Medium":
+        st.write("Flag for additional verification.")
+    else:
+        st.write("Approve transaction.")
