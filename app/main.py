@@ -2,7 +2,7 @@ import streamlit as st
 from nlp import extract_signals
 from risk_model import calculate_risk
 from reasoning import generate_reasoning
-
+from honeypot import analyze_honeypot_text
 
 st.set_page_config(
     page_title="NovaMind – Retail Risk Agent",
@@ -37,21 +37,31 @@ transaction_type = st.selectbox(
 )
 
 if st.button("Analyze Risk"):
+    # 1. NLP signals
     signals = extract_signals(transaction_text)
 
     st.subheader("Extracted Signals")
     st.json(signals)
 
-    score, category = calculate_risk(signals)
+    # 2. Honeypot intelligence
+    honeypot_signals = analyze_honeypot_text(transaction_text)
+
+    st.subheader("Honeypot Intelligence")
+    st.json(honeypot_signals)
+
+    # 3. Risk calculation (now both inputs exist)
+    score, category = calculate_risk(signals, honeypot_signals)
 
     st.metric(label="Risk Score", value=score)
     st.metric(label="Risk Category", value=category)
 
+    # 4. Reasoning
     reasoning = generate_reasoning(signals, score, category)
 
     st.markdown("### Explanation")
     st.write(reasoning)
 
+    # 5. Action
     st.markdown("### Recommended Action")
     if category == "High":
         st.write("Block transaction and escalate for manual review.")

@@ -36,6 +36,11 @@ def generate_reasoning(signals: dict, score: int, category: str) -> str:
                 "The transaction description is brief, increasing uncertainty."
             )
 
+        if honeypot := signals.get("honeypot_tactics"):
+            reasons.append(
+                f"Observed scam tactics similar to known abuse patterns: {honeypot}."
+            )
+
         if not reasons:
             reasons.append(
                 "No strong scam indicators were detected in the transaction text."
