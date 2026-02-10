@@ -1,4 +1,5 @@
 import streamlit as st
+from nlp import extract_signals
 
 st.set_page_config(
     page_title="NovaMind – Retail Risk Agent",
@@ -33,16 +34,16 @@ transaction_type = st.selectbox(
 )
 
 if st.button("Analyze Risk"):
-    if not transaction_text.strip():
-        st.warning("Please enter a transaction description.")
-    else:
-        st.subheader("Risk Assessment Result")
+    signals = extract_signals(transaction_text)
 
-        st.metric(label="Risk Score", value="--")
-        st.metric(label="Risk Category", value="--")
+    st.subheader("Extracted Signals")
+    st.json(signals)
 
-        st.markdown("### Explanation")
-        st.write("Risk analysis will appear here.")
+    st.metric(label="Risk Score", value="--")
+    st.metric(label="Risk Category", value="--")
 
-        st.markdown("### Recommended Action")
-        st.write("Pending analysis.")
+    st.markdown("### Explanation")
+    st.write("NLP signals extracted. Risk scoring pending.")
+
+    st.markdown("### Recommended Action")
+    st.write("Pending analysis.")
