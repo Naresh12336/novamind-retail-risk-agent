@@ -1,6 +1,7 @@
 import streamlit as st
 from nlp import extract_signals
 from risk_model import calculate_risk
+from reasoning import generate_reasoning
 
 
 st.set_page_config(
@@ -46,12 +47,10 @@ if st.button("Analyze Risk"):
     st.metric(label="Risk Score", value=score)
     st.metric(label="Risk Category", value=category)
 
+    reasoning = generate_reasoning(signals, score, category)
+
     st.markdown("### Explanation")
-    st.write(
-        f"The risk score is based on {signals['keyword_count']} keyword signals, "
-        f"urgency flag = {signals['urgency_flag']}, "
-        f"and text length = {signals['text_length']}."
-    )
+    st.write(reasoning)
 
     st.markdown("### Recommended Action")
     if category == "High":
