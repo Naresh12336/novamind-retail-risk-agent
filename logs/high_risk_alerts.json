@@ -1,0 +1,18 @@
+[
+    {
+        "timestamp": "2026-02-12T09:26:12.464482",
+        "transaction_id": "TXN-1001",
+        "risk_score": 100,
+        "risk_category": "High",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 4 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-12T09:26:38.917651",
+        "transaction_id": "TXN-1001",
+        "risk_score": 100,
+        "risk_category": "High",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 4 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    }
+]
