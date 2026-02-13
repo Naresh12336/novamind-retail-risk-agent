@@ -4,6 +4,8 @@ from engine.risk_model import calculate_risk
 from engine.reasoning import generate_reasoning
 from engine.decision_policy import decide_action
 from alerts.alert_service import emit_alert
+from analytics.decision_logger import log_decision
+
 
 
 def process_transaction(event: dict) -> dict:
@@ -41,5 +43,7 @@ def process_transaction(event: dict) -> dict:
     # --- Alert Routing ---
     if category == "High" and confidence_level in ["High", "Medium"]:
         emit_alert(result)
+
+    log_decision(event, result)
 
     return result
