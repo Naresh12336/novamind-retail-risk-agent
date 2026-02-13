@@ -44,6 +44,6 @@ def process_transaction(event: dict) -> dict:
     if category == "High" and confidence_level in ["High", "Medium"]:
         emit_alert(result)
 
-    log_decision(event, result)
+    log_decision(event, result, signals, honeypot)
 
     return result

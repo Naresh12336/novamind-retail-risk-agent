@@ -2,7 +2,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-LOG_FILE = Path("logs/decision_history.jsonl")
+BASE_DIR = Path(__file__).resolve().parent.parent
+LOG_FILE = BASE_DIR / "logs" / "decision_history.jsonl"
 
 
 def log_decision(event: dict, result: dict):
@@ -14,12 +15,16 @@ def log_decision(event: dict, result: dict):
         "confidence_score": result.get("confidence_score"),
         "confidence_level": result.get("confidence_level"),
         "action": result.get("recommended_action"),
-        "amount": event.get("amount"),
-        "account_age_days": event.get("account_age_days"),
+
+        "keyword_count": event.get("keyword_count"),
+        "urgency_flag": event.get("urgency_flag"),
+        "tactic_count": event.get("tactic_count"),
         "refund_count_last_30_days": event.get("refund_count_last_30_days"),
+        "account_age_days": event.get("account_age_days"),
+        "amount": event.get("amount"),
     }
 
-    LOG_FILE.parent.mkdir(exist_ok=True)
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
