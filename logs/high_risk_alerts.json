@@ -189,5 +189,225 @@
         "confidence_level": "High",
         "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
         "recommended_action": "Auto Block Transaction"
+    },
+    {
+        "timestamp": "2026-02-15T02:14:45.722463",
+        "transaction_id": "TX102",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.49,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T02:15:31.801834",
+        "transaction_id": "TX103",
+        "risk_score": 90,
+        "risk_category": "High",
+        "confidence_score": 0.44,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 90. 1 risk-related keywords were detected. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T02:16:20.857359",
+        "transaction_id": "TX105",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.58,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T02:16:36.534965",
+        "transaction_id": "TX106",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.72,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 1 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:26.896653",
+        "transaction_id": "A0",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.72,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:26.933086",
+        "transaction_id": "A1",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.56,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:26.950150",
+        "transaction_id": "A2",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.56,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:26.965634",
+        "transaction_id": "A3",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.72,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.049262",
+        "transaction_id": "A6",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.56,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.074851",
+        "transaction_id": "A8",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.7,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.104966",
+        "transaction_id": "A11",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.56,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.118166",
+        "transaction_id": "A12",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.72,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.131292",
+        "transaction_id": "A13",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.56,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.146040",
+        "transaction_id": "A14",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.86,
+        "confidence_level": "High",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Auto Block Transaction"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.156525",
+        "transaction_id": "A15",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.53,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 1 risk-related keywords were detected. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.177132",
+        "transaction_id": "A16",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.7,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.192125",
+        "transaction_id": "A17",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.56,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.204387",
+        "transaction_id": "A18",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.53,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 1 risk-related keywords were detected. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.227816",
+        "transaction_id": "A20",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.53,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 1 risk-related keywords were detected. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.257009",
+        "transaction_id": "A22",
+        "risk_score": 90,
+        "risk_category": "High",
+        "confidence_score": 0.44,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 90. 1 risk-related keywords were detected. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.287370",
+        "transaction_id": "A25",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.72,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Manual Review Required"
+    },
+    {
+        "timestamp": "2026-02-15T03:06:27.319041",
+        "transaction_id": "A28",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.86,
+        "confidence_level": "High",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 3 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Auto Block Transaction"
     }
 ]

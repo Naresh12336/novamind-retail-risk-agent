@@ -38,6 +38,16 @@ def process_transaction(event: dict) -> dict:
         "confidence_level": confidence_level,
         "reasoning": reasoning,
         "recommended_action": action,
+        "evidence": {
+            "textual_signals": signals,
+            "behavioral_signals": {
+                "refund_count_last_30_days": event.get("refund_count_last_30_days"),
+                "account_age_days": event.get("account_age_days"),
+                "amount": event.get("amount")
+            },
+            "honeypot_signals": honeypot
+        }
+
     }
 
     # --- Alert Routing ---

@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_FILE = BASE_DIR / "logs" / "decision_history.jsonl"
 
 
-def log_decision(event: dict, result: dict):
+def log_decision(event: dict, result: dict, signals: dict, honeypot: dict):
     record = {
         "timestamp": datetime.utcnow().isoformat(),
         "transaction_id": result.get("transaction_id"),
@@ -16,12 +16,17 @@ def log_decision(event: dict, result: dict):
         "confidence_level": result.get("confidence_level"),
         "action": result.get("recommended_action"),
 
-        "keyword_count": event.get("keyword_count"),
-        "urgency_flag": event.get("urgency_flag"),
-        "tactic_count": event.get("tactic_count"),
-        "refund_count_last_30_days": event.get("refund_count_last_30_days"),
-        "account_age_days": event.get("account_age_days"),
+        # behavioral
         "amount": event.get("amount"),
+        "account_age_days": event.get("account_age_days"),
+        "refund_count_last_30_days": event.get("refund_count_last_30_days"),
+
+        # textual
+        "keyword_count": signals.get("keyword_count"),
+        "urgency_flag": signals.get("urgency_flag"),
+
+        # adversarial
+        "tactic_count": honeypot.get("tactic_count"),
     }
 
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
