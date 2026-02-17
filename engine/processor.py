@@ -5,6 +5,8 @@ from engine.reasoning import generate_reasoning
 from engine.decision_policy import decide_action
 from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
+from engine.contribution import derive_contribution
+import uuid
 
 
 
@@ -28,6 +30,10 @@ def process_transaction(event: dict) -> dict:
 
     # --- Decision Policy ---
     action = decide_action(category, confidence_level)
+    # --- Contribution Summary ---
+    contribution = derive_contribution(signals, honeypot, event)
+
+    decision_id = str(uuid.uuid4())
 
     # --- Response Object ---
     result = {
@@ -46,7 +52,9 @@ def process_transaction(event: dict) -> dict:
                 "amount": event.get("amount")
             },
             "honeypot_signals": honeypot
-        }
+        },
+        "contribution": contribution,
+        "decision_id": decision_id
 
     }
 
