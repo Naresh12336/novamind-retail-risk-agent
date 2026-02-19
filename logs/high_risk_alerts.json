@@ -816,5 +816,87 @@
             "secondary_factor": "pressure_or_threat_language",
             "supporting_factor": "suspicious_language_pattern"
         }
+    },
+    {
+        "timestamp": "2026-02-19T11:58:32.804257",
+        "decision_id": "7b193aec-5a95-449b-952e-bf3ecc47350a",
+        "transaction_id": "CUST900-T7",
+        "customer_id": "U900",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.65,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Auto Block Transaction",
+        "evidence": {
+            "textual_signals": {
+                "keyword_hits": [
+                    "refund",
+                    "immediately"
+                ],
+                "keyword_count": 2,
+                "urgency_flag": true,
+                "text_length": 6
+            },
+            "behavioral_signals": {
+                "refund_count_last_30_days": 7,
+                "account_age_days": 320,
+                "amount": 120.0
+            },
+            "honeypot_signals": {
+                "detected_tactics": [
+                    "threat_language",
+                    "urgency_pressure",
+                    "refund_abuse"
+                ],
+                "tactic_count": 3
+            }
+        },
+        "contribution": {
+            "primary_factor": "repeat_refund_behavior",
+            "secondary_factor": "pressure_or_threat_language",
+            "supporting_factor": "suspicious_language_pattern"
+        }
+    },
+    {
+        "timestamp": "2026-02-19T11:58:32.811106",
+        "decision_id": "7b193aec-5a95-449b-952e-bf3ecc47350a",
+        "transaction_id": "CUST900-T7",
+        "customer_id": "U900",
+        "risk_score": 100,
+        "risk_category": "High",
+        "confidence_score": 0.65,
+        "confidence_level": "Medium",
+        "reasoning": "Based on the analysis, the transaction is classified as High risk with a score of 100. 2 risk-related keywords were detected. Urgent language patterns were observed. The transaction description is brief, increasing uncertainty.",
+        "recommended_action": "Auto Block Transaction",
+        "evidence": {
+            "textual_signals": {
+                "keyword_hits": [
+                    "refund",
+                    "immediately"
+                ],
+                "keyword_count": 2,
+                "urgency_flag": true,
+                "text_length": 6
+            },
+            "behavioral_signals": {
+                "refund_count_last_30_days": 7,
+                "account_age_days": 320,
+                "amount": 120.0
+            },
+            "honeypot_signals": {
+                "detected_tactics": [
+                    "threat_language",
+                    "urgency_pressure",
+                    "refund_abuse"
+                ],
+                "tactic_count": 3
+            }
+        },
+        "contribution": {
+            "primary_factor": "repeat_refund_behavior",
+            "secondary_factor": "pressure_or_threat_language",
+            "supporting_factor": "suspicious_language_pattern"
+        }
     }
 ]

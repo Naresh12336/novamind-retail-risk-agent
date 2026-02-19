@@ -9,6 +9,7 @@ from engine.contribution import derive_contribution
 import uuid
 
 
+print("PROCESSING EVENT")
 
 def process_transaction(event: dict) -> dict:
     description = event.get("description", "")
@@ -45,6 +46,7 @@ def process_transaction(event: dict) -> dict:
 
     decision_id = str(uuid.uuid4())
 
+
     # Decision layer (ONLY place action is decided)
     action = decide_action(category, confidence_level, score)
 
@@ -61,9 +63,15 @@ def process_transaction(event: dict) -> dict:
         "evidence": evidence,
         "contribution": contribution
     }
+    print("DECISION:", action)
 
     # Alert MUST depend on result, not local variables
+    print("CHECKING ALERT CONDITION")
+
     if result["recommended_action"] in ["Manual Review Required", "Auto Block Transaction"]:
+        print("ALERT CONDITION PASSED")
+        emit_alert(result)
+
         emit_alert(result)
 
     log_decision(event, result, signals, honeypot)
