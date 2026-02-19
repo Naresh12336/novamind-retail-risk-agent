@@ -22,44 +22,48 @@ def process_transaction(event: dict) -> dict:
         signals, honeypot, event
     )
 
+    # Evidence aggregation (single investigation object)
+    evidence = {
+        "textual_signals": signals,
+        "behavioral_signals": {
+            "refund_count_last_30_days": event.get("refund_count_last_30_days", 0),
+            "account_age_days": event.get("account_age_days", 0),
+            "amount": event.get("amount", 0)
+        },
+        "honeypot_signals": honeypot
+    }
+
     # --- Reasoning Policy (invoke reasoning only when needed) ---
     if category in ["Medium", "High"]:
         reasoning = generate_reasoning(signals, score, category)
     else:
         reasoning = "Low risk transaction based on current signals."
 
-    # --- Decision Policy ---
-    action = decide_action(category, confidence_level)
+
     # --- Contribution Summary ---
     contribution = derive_contribution(signals, honeypot, event)
 
     decision_id = str(uuid.uuid4())
 
-    # --- Response Object ---
+    # Decision layer (ONLY place action is decided)
+    action = decide_action(category, confidence_level, score)
+
     result = {
+        "decision_id": decision_id,
         "transaction_id": event.get("transaction_id"),
+        "customer_id": event.get("customer_id"),
         "risk_score": score,
         "risk_category": category,
         "confidence_score": round(confidence_score, 2),
         "confidence_level": confidence_level,
         "reasoning": reasoning,
         "recommended_action": action,
-        "evidence": {
-            "textual_signals": signals,
-            "behavioral_signals": {
-                "refund_count_last_30_days": event.get("refund_count_last_30_days"),
-                "account_age_days": event.get("account_age_days"),
-                "amount": event.get("amount")
-            },
-            "honeypot_signals": honeypot
-        },
-        "contribution": contribution,
-        "decision_id": decision_id
-
+        "evidence": evidence,
+        "contribution": contribution
     }
 
-    # --- Alert Routing ---
-    if category == "High" and confidence_level in ["High", "Medium"]:
+    # Alert MUST depend on result, not local variables
+    if result["recommended_action"] in ["Manual Review Required", "Auto Block Transaction"]:
         emit_alert(result)
 
     log_decision(event, result, signals, honeypot)

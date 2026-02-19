@@ -16,3 +16,24 @@ def get_decision_by_id(decision_id: str):
                 return record
 
     return None
+
+def get_customer_history(customer_id: str):
+    if not LOG_FILE.exists():
+        return []
+
+    records = []
+
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            record = json.loads(line)
+            if record.get("customer_id") == customer_id:
+                records.append(record)
+
+    records.sort(key=lambda r: r.get("timestamp", ""))
+
+    return records
+
+def get_recent_customer_events(customer_id: str, limit: int = 3):
+    history = get_customer_history(customer_id)
+    return history[-limit:] if history else []
+

@@ -10,6 +10,7 @@ def log_decision(event: dict, result: dict, signals: dict, honeypot: dict):
     record = {
         "timestamp": datetime.utcnow().isoformat(),
         "transaction_id": result.get("transaction_id"),
+        "customer_id": event.get("customer_id"),
         "risk_score": result.get("risk_score"),
         "risk_category": result.get("risk_category"),
         "confidence_score": result.get("confidence_score"),
@@ -27,6 +28,7 @@ def log_decision(event: dict, result: dict, signals: dict, honeypot: dict):
 
         # adversarial
         "tactic_count": honeypot.get("tactic_count"),
+
     }
 
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)

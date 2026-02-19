@@ -1,17 +1,29 @@
-def decide_action(risk_category: str, confidence: str) -> str:
+def decide_action(risk_category: str, confidence: str, score: int) -> str:
 
+    # --- HIGH RISK ---
     if risk_category == "High":
-        if confidence == "High":
+
+        if score >= 90:
             return "Auto Block Transaction"
-        elif confidence == "Medium":
+
+        if confidence == "High":
             return "Manual Review Required"
-        else:
+
+        if confidence == "Medium":
             return "Request Customer Verification"
 
-    if risk_category == "Medium":
-        if confidence == "High":
-            return "Step-Up Authentication"
-        else:
-            return "Monitor Activity"
+        return "Monitor Activity"
 
+    # --- MEDIUM RISK ---
+    if risk_category == "Medium":
+
+        if score >= 50 and confidence == "High":
+            return "Step-Up Authentication"
+
+        if score >= 45:
+            return "Request Customer Verification"
+
+        return "Monitor Activity"
+
+    # --- LOW RISK ---
     return "Allow Transaction"
