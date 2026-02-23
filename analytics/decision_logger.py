@@ -29,6 +29,10 @@ def log_decision(event: dict, result: dict, signals: dict, honeypot: dict):
         # adversarial
         "tactic_count": honeypot.get("tactic_count"),
 
+        "primary_factor": result.get("contribution", {}).get("primary_factor"),
+        "secondary_factor": result.get("contribution", {}).get("secondary_factor"),
+        "supporting_factor": result.get("contribution", {}).get("supporting_factor"),
+
     }
 
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
