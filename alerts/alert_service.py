@@ -1,21 +1,22 @@
+import logging
 import json
-import os
-from datetime import datetime
+from services.investigation_services import get_recent_customer_events
 
-ALERT_FILE = "logs/high_risk_alerts.json"
-
+logger = logging.getLogger("alerts")
 
 def emit_alert(result: dict):
-    from services.investigation_services import get_recent_customer_events
 
     customer_id = result["customer_id"]
     history = get_recent_customer_events(customer_id)
 
-    print("\n=== ALERT TRIGGERED ===")
-    print({
+    alert_payload = {
         "decision_id": result["decision_id"],
+        "transaction_id": result["transaction_id"],
         "customer_id": customer_id,
-        "risk": result["risk_category"],
-        "action": result["recommended_action"],
+        "risk_category": result["risk_category"],
+        "confidence_level": result["confidence_level"],
+        "recommended_action": result["recommended_action"],
         "recent_activity": history
-    })
+    }
+
+    logger.warning(json.dumps(alert_payload))

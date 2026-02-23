@@ -3,7 +3,12 @@ from pydantic import BaseModel
 from engine.processor import process_transaction
 from services.investigation_services import get_decision_by_id, get_customer_history, get_recent_customer_events
 from fastapi import HTTPException
+import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
 
 
 app = FastAPI(title="NovaMind Risk Service")
