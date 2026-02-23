@@ -5,21 +5,17 @@ from datetime import datetime
 ALERT_FILE = "logs/high_risk_alerts.json"
 
 
-def emit_alert(alert_data: dict):
-    os.makedirs("logs", exist_ok=True)
+def emit_alert(result: dict):
+    from services.investigation_services import get_recent_customer_events
 
-    alert_entry = {
-        "timestamp": datetime.utcnow().isoformat(),
-        **alert_data
-    }
+    customer_id = result["customer_id"]
+    history = get_recent_customer_events(customer_id)
 
-    if os.path.exists(ALERT_FILE):
-        with open(ALERT_FILE, "r") as f:
-            data = json.load(f)
-    else:
-        data = []
-
-    data.append(alert_entry)
-
-    with open(ALERT_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    print("\n=== ALERT TRIGGERED ===")
+    print({
+        "decision_id": result["decision_id"],
+        "customer_id": customer_id,
+        "risk": result["risk_category"],
+        "action": result["recommended_action"],
+        "recent_activity": history
+    })

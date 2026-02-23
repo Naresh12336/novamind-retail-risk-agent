@@ -12,6 +12,9 @@ import uuid
 print("PROCESSING EVENT")
 
 def process_transaction(event: dict) -> dict:
+    if "customer_id" not in event:
+        raise ValueError("customer_id missing in event")
+
     description = event.get("description", "")
 
     # --- Intelligence Extraction ---
