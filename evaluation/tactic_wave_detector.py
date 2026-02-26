@@ -14,9 +14,11 @@ def detect():
     daily_tactics = defaultdict(list)
 
     for r in records:
+        if r.get("risk_category") != "High":
+            continue
+
         date = r["timestamp"][:10]
-        tactics = r.get("tactic_count", 0)
-        primary = r.get("contribution", {}).get("primary_factor")
+        primary = r.get("primary_factor")
         if primary:
             daily_tactics[date].append(primary)
 
@@ -29,6 +31,7 @@ def detect():
         for tactic, count in counter.items():
             if total >= 5 and count / total > 0.6:
                 print(f"Coordinated pattern on {date}: {tactic} dominance ({count}/{total})")
+                print(f"{date} distribution:", counter)
 
 if __name__ == "__main__":
     detect()
