@@ -2,6 +2,7 @@ import logging
 import json
 from collections import Counter
 from services.investigation_services import get_recent_customer_events
+from services.cluster_service import detect_live_cluster
 
 logger = logging.getLogger("alerts")
 
@@ -60,3 +61,16 @@ def emit_alert(result: dict):
 
     except Exception as e:
         logger.error(f"Wave detection error: {str(e)}")
+
+    cluster = detect_live_cluster(result)
+
+    if cluster:
+        logger.critical(
+            json.dumps({
+                "type": "FRAUD_RING_DETECTED",
+                "signature": cluster["signature"],
+                "affected_customers": cluster["customers"],
+                "cluster_size": cluster["cluster_size"]
+            })
+        )
+
