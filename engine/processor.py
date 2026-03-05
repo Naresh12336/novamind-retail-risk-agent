@@ -8,25 +8,23 @@ from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
 import uuid
 
-
 print("PROCESSING EVENT")
 
+
 def process_transaction(event: dict) -> dict:
+
     if "customer_id" not in event:
         raise ValueError("customer_id missing in event")
 
     description = event.get("description", "")
 
-    # --- Intelligence Extraction ---
     signals = extract_signals(description)
     honeypot = analyze_honeypot_text(description)
 
-    # --- Risk Evaluation ---
     score, category, confidence_score, confidence_level = calculate_risk(
         signals, honeypot, event
     )
 
-    # Evidence aggregation (single investigation object)
     evidence = {
         "textual_signals": signals,
         "behavioral_signals": {
@@ -37,20 +35,15 @@ def process_transaction(event: dict) -> dict:
         "honeypot_signals": honeypot
     }
 
-    # --- Reasoning Policy (invoke reasoning only when needed) ---
     if category in ["Medium", "High"]:
         reasoning = generate_reasoning(signals, score, category)
     else:
         reasoning = "Low risk transaction based on current signals."
 
-
-    # --- Contribution Summary ---
     contribution = derive_contribution(signals, honeypot, event)
 
     decision_id = str(uuid.uuid4())
 
-
-    # Decision layer (ONLY place action is decided)
     action = decide_action(category, confidence_level, score)
 
     result = {
@@ -61,22 +54,21 @@ def process_transaction(event: dict) -> dict:
         "risk_category": category,
         "confidence_score": round(confidence_score, 2),
         "confidence_level": confidence_level,
-        "reasoning": reasoning,
         "recommended_action": action,
+        "reasoning": reasoning,
         "evidence": evidence,
         "contribution": contribution
     }
+
     print("DECISION:", action)
 
-    # Alert MUST depend on result, not local variables
+    # Persist first
+    log_decision(event, result, signals, honeypot)
+
     print("CHECKING ALERT CONDITION")
 
-    if result["recommended_action"] in ["Manual Review Required", "Auto Block Transaction"]:
+    if action in ["Manual Review Required", "Auto Block Transaction"]:
         print("ALERT CONDITION PASSED")
         emit_alert(result)
-
-        emit_alert(result)
-
-    log_decision(event, result, signals, honeypot)
 
     return result

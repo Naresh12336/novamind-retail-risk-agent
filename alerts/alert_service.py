@@ -10,11 +10,11 @@ logger = logging.getLogger("alerts")
 def emit_alert(result: dict):
 
     customer_id = result.get("customer_id")
+
     if not customer_id:
-        logger.error("ALERT EMISSION FAILED: missing customer_id")
+        logger.error("Missing customer_id in alert")
         return
 
-    # --- Enrichment: recent customer activity ---
     history = get_recent_customer_events(customer_id)
 
     alert_payload = {
@@ -27,33 +27,25 @@ def emit_alert(result: dict):
         "recent_activity": history
     }
 
-    # --- Emit standard alert ---
     logger.warning(json.dumps(alert_payload))
 
-    # --- Coordinated Attack Wave Detection ---
+    # --- Wave Detection ---
     try:
-        event_date = result.get("timestamp", "")[:10]
-
-        same_day_high = [
-            e for e in history
-            if e.get("timestamp", "")[:10] == event_date
-            and e.get("risk_category") == "High"
-        ]
 
         primary_factors = [
             e.get("primary_factor")
-            for e in same_day_high
-            if e.get("primary_factor")
+            for e in history
+            if e.get("risk_category") == "High"
         ]
 
         counter = Counter(primary_factors)
 
         for tactic, count in counter.items():
+
             if count >= 5:
                 logger.critical(
                     json.dumps({
                         "type": "COORDINATED_ATTACK_WAVE",
-                        "date": event_date,
                         "dominant_tactic": tactic,
                         "case_count": count
                     })
@@ -62,9 +54,22 @@ def emit_alert(result: dict):
     except Exception as e:
         logger.error(f"Wave detection error: {str(e)}")
 
-    cluster = detect_live_cluster(result)
+    # --- Cluster Detection ---
+    cluster_input = {
+        "customer_id": result.get("customer_id"),
+        "primary_factor": result.get("contribution", {}).get("primary_factor"),
+        "refund_count_last_30_days": result.get("evidence", {})
+        .get("behavioral_signals", {})
+        .get("refund_count_last_30_days", 0)
+    }
+
+    cluster = detect_live_cluster(cluster_input)
+
+    print("RUNNING CLUSTER CHECK")
+    print("CLUSTER RESULT:", cluster)
 
     if cluster:
+
         logger.critical(
             json.dumps({
                 "type": "FRAUD_RING_DETECTED",
@@ -73,4 +78,3 @@ def emit_alert(result: dict):
                 "cluster_size": cluster["cluster_size"]
             })
         )
-
