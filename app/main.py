@@ -35,6 +35,7 @@ class TransactionEvent(BaseModel):
     shipping_address_hash: Optional[str] = None
     email_hash: Optional[str] = None
     phone_hash: Optional[str] = None
+    browser_fingerprint: Optional[str] = None
 
 
 def emit_alert(result: dict):
