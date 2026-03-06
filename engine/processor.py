@@ -7,6 +7,7 @@ from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
 from services.graph_service import update_graph
+from services.graph_service import get_graph_risk_signal
 import uuid
 
 print("PROCESSING EVENT")
@@ -18,6 +19,7 @@ def process_transaction(event: dict) -> dict:
         raise ValueError("customer_id missing in event")
 
     update_graph(event)
+    graph_signal = get_graph_risk_signal(event)
     description = event.get("description", "")
 
     signals = extract_signals(description)
@@ -25,7 +27,7 @@ def process_transaction(event: dict) -> dict:
 
 
     score, category, confidence_score, confidence_level = calculate_risk(
-        signals, honeypot, event
+        signals, honeypot, event, graph_signal
     )
 
     evidence = {
@@ -35,7 +37,8 @@ def process_transaction(event: dict) -> dict:
             "account_age_days": event.get("account_age_days", 0),
             "amount": event.get("amount", 0)
         },
-        "honeypot_signals": honeypot
+        "honeypot_signals": honeypot,
+        "graph_signal": graph_signal
     }
 
     if category in ["Medium", "High"]:
@@ -59,6 +62,7 @@ def process_transaction(event: dict) -> dict:
         "confidence_level": confidence_level,
         "recommended_action": action,
         "reasoning": reasoning,
+        "graph_signal": graph_signal,
         "evidence": evidence,
         "contribution": contribution
     }

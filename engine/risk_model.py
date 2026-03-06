@@ -1,4 +1,4 @@
-def calculate_risk(signals: dict, honeypot: dict, event: dict) -> tuple:
+def calculate_risk(signals: dict, honeypot: dict, event: dict, graph_signal: None) -> tuple:
     score = 0
     signal_strength = 0
 
@@ -43,6 +43,19 @@ def calculate_risk(signals: dict, honeypot: dict, event: dict) -> tuple:
 
     signal_strength += behavioral_hits
 
+    # Graph intelligence influence
+    if graph_signal == "shared_device_cluster":
+        score += 25
+
+    elif graph_signal == "shared_ip_cluster":
+        score += 20
+
+    elif graph_signal == "shared_payment_cluster":
+        score += 30
+
+    elif graph_signal == "shared_address_cluster":
+        score += 15
+
     score = min(score, 100)
 
     # --- Category ---
@@ -60,6 +73,7 @@ def calculate_risk(signals: dict, honeypot: dict, event: dict) -> tuple:
     # --- Weighted Confidence Calculation ---
 
     # Normalize each dimension to [0,1]
+
     textual_score = min((keyword_count * 0.2) + (0.3 if urgency else 0), 1.0)
     honeypot_score = min(tactic_count * 0.3, 1.0)
     behavioral_score = min(behavioral_hits * 0.4, 1.0)

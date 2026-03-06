@@ -87,3 +87,16 @@ def detect_graph_cluster(event: dict):
         }
 
     return None
+
+def get_graph_risk_signal(event: dict):
+
+    device = event.get("device_id")
+    ip = event.get("ip_address")
+
+    if device and len(device_index[device]) >= DEVICE_CLUSTER_THRESHOLD:
+        return "shared_device_cluster"
+
+    if ip and len(ip_index[ip]) >= IP_CLUSTER_THRESHOLD:
+        return "shared_ip_cluster"
+
+    return None
