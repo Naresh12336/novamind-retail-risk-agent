@@ -3,11 +3,12 @@ import json
 from collections import Counter
 from services.investigation_services import get_recent_customer_events
 from services.cluster_service import detect_live_cluster
+from services.graph_service import detect_graph_cluster
 
 logger = logging.getLogger("alerts")
 
 
-def emit_alert(result: dict):
+def emit_alert(result: dict, event:dict):
 
     customer_id = result.get("customer_id")
 
@@ -76,5 +77,28 @@ def emit_alert(result: dict):
                 "signature": cluster["signature"],
                 "affected_customers": cluster["customers"],
                 "cluster_size": cluster["cluster_size"]
+            })
+        )
+
+    graph_input = {
+        "customer_id": result.get("customer_id"),
+        "device_id": result.get("device_id"),
+        "ip_address": result.get("ip_address"),
+        "payment_method_hash": result.get("payment_method_hash"),
+        "shipping_address_hash": result.get("shipping_address_hash"),
+        "email_hash": result.get("email_hash"),
+        "phone_hash": result.get("phone_hash")
+    }
+
+    graph_cluster = detect_graph_cluster(event)
+
+    if graph_cluster:
+        logger.critical(
+            json.dumps({
+                "type": "FRAUD_NETWORK_DETECTED",
+                "cluster_type": graph_cluster["type"],
+                "entity": graph_cluster["entity"],
+                "affected_customers": graph_cluster["customers"],
+                "cluster_size": graph_cluster["cluster_size"]
             })
         )

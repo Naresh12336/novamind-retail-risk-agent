@@ -6,6 +6,7 @@ from engine.decision_policy import decide_action
 from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
+from services.graph_service import update_graph
 import uuid
 
 print("PROCESSING EVENT")
@@ -16,10 +17,12 @@ def process_transaction(event: dict) -> dict:
     if "customer_id" not in event:
         raise ValueError("customer_id missing in event")
 
+    update_graph(event)
     description = event.get("description", "")
 
     signals = extract_signals(description)
     honeypot = analyze_honeypot_text(description)
+
 
     score, category, confidence_score, confidence_level = calculate_risk(
         signals, honeypot, event
@@ -69,6 +72,6 @@ def process_transaction(event: dict) -> dict:
 
     if action in ["Manual Review Required", "Auto Block Transaction"]:
         print("ALERT CONDITION PASSED")
-        emit_alert(result)
+        emit_alert(result, event)
 
     return result
