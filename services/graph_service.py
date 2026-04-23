@@ -1,6 +1,10 @@
-from collections import defaultdict
+# graph_service.py
 
-# entity indexes
+from collections import defaultdict, deque
+
+# =====================================
+# INDEXES
+# =====================================
 device_index = defaultdict(set)
 ip_index = defaultdict(set)
 payment_index = defaultdict(set)
@@ -9,138 +13,155 @@ email_index = defaultdict(set)
 phone_index = defaultdict(set)
 browser_index = defaultdict(set)
 
-# thresholds for fraud clusters
-DEVICE_CLUSTER_THRESHOLD = 4
-IP_CLUSTER_THRESHOLD = 5
-PAYMENT_CLUSTER_THRESHOLD = 3
-ADDRESS_CLUSTER_THRESHOLD = 3
-EMAIL_CLUSTER_THRESHOLD = 3
-PHONE_CLUSTER_THRESHOLD = 3
-BROWSER_CLUSTER_THRESHOLD = 4
+customer_entities = defaultdict(list)
+
+# =====================================
+# THRESHOLDS
+# =====================================
+DEVICE_CLUSTER_THRESHOLD = 2
+IP_CLUSTER_THRESHOLD = 2
+PAYMENT_CLUSTER_THRESHOLD = 2
+ADDRESS_CLUSTER_THRESHOLD = 2
+EMAIL_CLUSTER_THRESHOLD = 2
+PHONE_CLUSTER_THRESHOLD = 2
+BROWSER_CLUSTER_THRESHOLD = 2
+
+COMMUNITY_MIN_SIZE = 4
 
 
+# =====================================
+# HELPERS
+# =====================================
+def _add(index, entity_type, entity_value, customer):
+    index[entity_value].add(customer)
+    customer_entities[customer].append(f"{entity_type}:{entity_value}")
+
+
+def _neighbors(entity_key: str):
+    entity_type, entity_value = entity_key.split(":", 1)
+
+    mapping = {
+        "device": device_index,
+        "ip": ip_index,
+        "payment": payment_index,
+        "address": address_index,
+        "email": email_index,
+        "phone": phone_index,
+        "browser": browser_index
+    }
+
+    return mapping[entity_type][entity_value]
+
+
+# =====================================
+# UPDATE GRAPH
+# =====================================
 def update_graph(event: dict):
-    """
-    Update entity indexes with the latest transaction event.
-    """
 
     customer = event.get("customer_id")
 
-    device = event.get("device_id")
-    ip = event.get("ip_address")
-    payment = event.get("payment_method_hash")
-    address = event.get("shipping_address_hash")
-    email = event.get("email_hash")
-    phone = event.get("phone_hash")
-    browser = event.get("browser_fingerprint")
+    if not customer:
+        return
 
-    if device:
-        device_index[device].add(customer)
+    entity_map = {
+        "device": event.get("device_id"),
+        "ip": event.get("ip_address"),
+        "payment": event.get("payment_method_hash"),
+        "address": event.get("shipping_address_hash"),
+        "email": event.get("email_hash"),
+        "phone": event.get("phone_hash"),
+        "browser": event.get("browser_fingerprint"),
+    }
 
-    if ip:
-        ip_index[ip].add(customer)
+    for entity_type, value in entity_map.items():
+        if not value:
+            continue
 
-    if payment:
-        payment_index[payment].add(customer)
+        if entity_type == "device":
+            _add(device_index, entity_type, value, customer)
+        elif entity_type == "ip":
+            _add(ip_index, entity_type, value, customer)
+        elif entity_type == "payment":
+            _add(payment_index, entity_type, value, customer)
+        elif entity_type == "address":
+            _add(address_index, entity_type, value, customer)
+        elif entity_type == "email":
+            _add(email_index, entity_type, value, customer)
+        elif entity_type == "phone":
+            _add(phone_index, entity_type, value, customer)
+        elif entity_type == "browser":
+            _add(browser_index, entity_type, value, customer)
 
-    if address:
-        address_index[address].add(customer)
 
-    if email:
-        email_index[email].add(customer)
-
-    if phone:
-        phone_index[phone].add(customer)
-
-    if browser:
-        browser_index[browser].add(customer)
-
-
+# =====================================
+# DIRECT CLUSTERS
+# =====================================
 def detect_graph_cluster(event: dict):
-    """
-    Detect shared infrastructure fraud clusters.
-    """
 
-    device = event.get("device_id")
-    ip = event.get("ip_address")
-    payment = event.get("payment_method_hash")
-    address = event.get("shipping_address_hash")
-    email = event.get("email_hash")
-    phone = event.get("phone_hash")
-    browser = event.get("browser_fingerprint")
+    checks = [
+        ("SHARED_DEVICE_CLUSTER", event.get("device_id"), device_index, DEVICE_CLUSTER_THRESHOLD),
+        ("SHARED_IP_CLUSTER", event.get("ip_address"), ip_index, IP_CLUSTER_THRESHOLD),
+        ("SHARED_PAYMENT_CLUSTER", event.get("payment_method_hash"), payment_index, PAYMENT_CLUSTER_THRESHOLD),
+        ("SHARED_ADDRESS_CLUSTER", event.get("shipping_address_hash"), address_index, ADDRESS_CLUSTER_THRESHOLD),
+        ("SHARED_EMAIL_CLUSTER", event.get("email_hash"), email_index, EMAIL_CLUSTER_THRESHOLD),
+        ("SHARED_PHONE_CLUSTER", event.get("phone_hash"), phone_index, PHONE_CLUSTER_THRESHOLD),
+        ("SHARED_BROWSER_CLUSTER", event.get("browser_fingerprint"), browser_index, BROWSER_CLUSTER_THRESHOLD),
+    ]
 
-    if device and len(device_index[device]) >= DEVICE_CLUSTER_THRESHOLD:
-        return {
-            "type": "SHARED_DEVICE_CLUSTER",
-            "entity": device,
-            "customers": list(device_index[device]),
-            "cluster_size": len(device_index[device])
-        }
-
-    if ip and len(ip_index[ip]) >= IP_CLUSTER_THRESHOLD:
-        return {
-            "type": "SHARED_IP_CLUSTER",
-            "entity": ip,
-            "customers": list(ip_index[ip]),
-            "cluster_size": len(ip_index[ip])
-        }
-
-    if payment and len(payment_index[payment]) >= PAYMENT_CLUSTER_THRESHOLD:
-        return {
-            "type": "SHARED_PAYMENT_CLUSTER",
-            "entity": payment,
-            "customers": list(payment_index[payment]),
-            "cluster_size": len(payment_index[payment])
-        }
-
-    if address and len(address_index[address]) >= ADDRESS_CLUSTER_THRESHOLD:
-        return {
-            "type": "SHARED_ADDRESS_CLUSTER",
-            "entity": address,
-            "customers": list(address_index[address]),
-            "cluster_size": len(address_index[address])
-        }
-
-    if email and len(email_index[email]) >= EMAIL_CLUSTER_THRESHOLD:
-        return {
-            "type": "SHARED_EMAIL_CLUSTER",
-            "entity": email,
-            "customers": list(email_index[email]),
-            "cluster_size": len(email_index[email])
-        }
-
-    if phone and len(phone_index[phone]) >= PHONE_CLUSTER_THRESHOLD:
-        return {
-            "type": "SHARED_PHONE_CLUSTER",
-            "entity": phone,
-            "customers": list(phone_index[phone]),
-            "cluster_size": len(phone_index[phone])
-        }
-
-    if browser and len(browser_index[browser]) >= BROWSER_CLUSTER_THRESHOLD:
-        return {
-            "type": "SHARED_BROWSER_CLUSTER",
-            "entity": browser,
-            "customers": list(browser_index[browser]),
-            "cluster_size": len(browser_index[browser])
-        }
+    for cluster_type, entity, index, threshold in checks:
+        if entity and len(index[entity]) >= threshold:
+            return {
+                "type": cluster_type,
+                "entity": entity,
+                "customers": list(index[entity]),
+                "cluster_size": len(index[entity])
+            }
 
     return None
 
 
+# =====================================
+# RISK SIGNAL
+# =====================================
 def get_graph_risk_signal(event: dict):
 
-    device = event.get("device_id")
-    ip = event.get("ip_address")
-    payment = event.get("payment_method_hash")
+    cluster = detect_graph_cluster(event)
 
-    if device and len(device_index[device]) >= DEVICE_CLUSTER_THRESHOLD:
-        return "shared_device_cluster"
+    if cluster:
+        return cluster["type"].lower()
 
-    if ip and len(ip_index[ip]) >= IP_CLUSTER_THRESHOLD:
-        return "shared_ip_cluster"
+    return None
 
-    if payment and len(payment_index[payment]) >= PAYMENT_CLUSTER_THRESHOLD:
-        return "shared_payment_cluster"
+
+# =====================================
+# COMMUNITY DETECTION
+# =====================================
+def detect_fraud_community(start_customer: str):
+
+    if not start_customer:
+        return None
+
+    visited = set()
+    queue = deque([start_customer])
+
+    while queue:
+        customer = queue.popleft()
+
+        if customer in visited:
+            continue
+
+        visited.add(customer)
+
+        for entity_key in customer_entities.get(customer, []):
+            for neighbor in _neighbors(entity_key):
+                if neighbor not in visited:
+                    queue.append(neighbor)
+
+    if len(visited) >= COMMUNITY_MIN_SIZE:
+        return {
+            "type": "FRAUD_NETWORK_COMMUNITY",
+            "customers": list(visited),
+            "community_size": len(visited)
+        }
 
     return None
