@@ -77,6 +77,17 @@ def emit_alert(result: dict, event: dict):
                 "cluster_size": cluster["cluster_size"]
             }))
 
+    velocity_clusters = result.get("velocity_clusters", [])
+
+    for item in velocity_clusters:
+        logger.critical(json.dumps({
+            "type": item["type"],
+            "entity": item["entity"],
+            "count": item["count"],
+            "window_minutes": item["window_minutes"],
+            "severity": item["severity"]
+        }))
+
     # ==================================================
     # GRAPH COMMUNITY DETECTION
     # ==================================================
