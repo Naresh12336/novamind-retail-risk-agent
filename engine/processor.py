@@ -1,4 +1,5 @@
 from engine.nlp import extract_signals
+from engine.adaptive_policy import adaptive_decide_action
 from engine.honeypot import analyze_honeypot_text
 from engine.risk_model import calculate_risk
 from engine.reasoning import generate_reasoning
@@ -123,7 +124,22 @@ def process_transaction(event: dict):
     contribution = derive_contribution(signals, honeypot, event)
 
     decision_id = str(uuid.uuid4())
-    action = decide_action(category, confidence_level, score)
+    action = adaptive_decide_action(
+        score=score,
+        confidence_level=confidence_level,
+        event=event,
+        reputation_before=reputation_before,
+        graph_signals=graph_signals,
+        velocity_clusters=velocity_clusters,
+        ato_findings=ato_findings
+    )
+
+    print("ADAPTIVE DECISION:", action)
+    print("BASE SCORE:", score)
+    print("REPUTATION:", reputation_before)
+    print("GRAPH SIGNAL COUNT:", len(graph_signals))
+    print("VELOCITY COUNT:", len(velocity_clusters))
+    print("ATO COUNT:", len(ato_findings))
 
     # ======================================
     # RESULT
