@@ -17,73 +17,90 @@ from services.velocity_service import (
     detect_velocity_cluster
 )
 
+from services.ato_service import (
+    update_account_behavior,
+    detect_account_takeover
+)
+
 import uuid
 
 print("PROCESSING EVENT")
 
 
-def process_transaction(event: dict) -> dict:
+def process_transaction(event: dict):
 
     if "customer_id" not in event:
         raise ValueError("customer_id missing in event")
 
-    # =====================================
-    # GRAPH INTELLIGENCE
-    # =====================================
+    # ======================================
+    # GRAPH LAYER
+    # ======================================
     update_graph(event)
+
     graph_result = get_graph_risk_score(event)
 
-    graph_score = graph_result["score"]
-    graph_signals = graph_result["signals"]
+    graph_score = graph_result.get("score", 0)
+    graph_signals = graph_result.get("signals", [])
+    graph_clusters = graph_result.get("clusters", [])
+    graph_community = graph_result.get("community")
 
-    # =====================================
-    # VELOCITY INTELLIGENCE
-    # =====================================
+    # ======================================
+    # VELOCITY LAYER
+    # ======================================
     update_velocity(event)
     velocity_clusters = detect_velocity_cluster(event)
+    velocity_score = len(velocity_clusters) * 15
 
-    velocity_score = 0
+    # ======================================
+    # ACCOUNT TAKEOVER
+    # ======================================
+    update_account_behavior(event)
+    ato_findings = detect_account_takeover(event)
 
-    if velocity_clusters:
-        velocity_score = len(velocity_clusters) * 15
+    ato_score = 0
 
-    # =====================================
+    for item in ato_findings:
+        if item["type"] == "ACCOUNT_TAKEOVER_RISK":
+            ato_score += 35
+        else:
+            ato_score += 15
+
+    # ======================================
     # NLP + HONEYPOT
-    # =====================================
+    # ======================================
     description = event.get("description", "")
 
     signals = extract_signals(description)
     honeypot = analyze_honeypot_text(description)
 
-    # =====================================
-    # RISK MODEL
-    # =====================================
+    # ======================================
+    # INFRA SCORE
+    # ======================================
+    infra_score = graph_score + velocity_score + ato_score
+
     score, category, confidence_score, confidence_level = calculate_risk(
         signals=signals,
         honeypot=honeypot,
         event=event,
-        graph_signal=graph_score + velocity_score
+        graph_signal=infra_score
     )
 
-    # =====================================
+    # ======================================
     # REASONING
-    # =====================================
+    # ======================================
     if category in ["Medium", "High"]:
         reasoning = generate_reasoning(signals, score, category)
     else:
         reasoning = "Low risk transaction based on current signals."
 
-    # =====================================
-    # CONTRIBUTION
-    # =====================================
     contribution = derive_contribution(signals, honeypot, event)
 
     decision_id = str(uuid.uuid4())
     action = decide_action(category, confidence_level, score)
 
-    # =====================================
-    # RESULT
-    # =====================================
+    # ======================================
+    # RESPONSE
+    # ======================================
     result = {
         "decision_id": decision_id,
         "transaction_id": event.get("transaction_id"),
@@ -98,9 +115,14 @@ def process_transaction(event: dict) -> dict:
 
         "graph_score": graph_score,
         "graph_signals": graph_signals,
+        "graph_clusters": graph_clusters,
+        "graph_community": graph_community,
 
         "velocity_score": velocity_score,
         "velocity_clusters": velocity_clusters,
+
+        "ato_score": ato_score,
+        "ato_findings": ato_findings,
 
         "evidence": {
             "textual_signals": signals,
@@ -117,17 +139,12 @@ def process_transaction(event: dict) -> dict:
 
     print("DECISION:", action)
     print("GRAPH SCORE:", graph_score)
+    print("GRAPH SIGNALS:", graph_signals)
     print("VELOCITY SCORE:", velocity_score)
-    print("VELOCITY CLUSTERS:", velocity_clusters)
+    print("ATO SCORE:", ato_score)
 
-    # =====================================
-    # LOGGING
-    # =====================================
     log_decision(event, result, signals, honeypot)
 
-    # =====================================
-    # ALERTING
-    # =====================================
     if action in ["Manual Review Required", "Auto Block Transaction"]:
         emit_alert(result, event)
 
