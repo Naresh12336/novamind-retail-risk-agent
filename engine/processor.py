@@ -22,6 +22,12 @@ from services.ato_service import (
     detect_account_takeover
 )
 
+from services.reputation_service import (
+    get_reputation,
+    get_reputation_adjustment,
+    update_reputation
+)
+
 import uuid
 
 print("PROCESSING EVENT")
@@ -32,8 +38,10 @@ def process_transaction(event: dict):
     if "customer_id" not in event:
         raise ValueError("customer_id missing in event")
 
+    customer_id = event["customer_id"]
+
     # ======================================
-    # GRAPH LAYER
+    # GRAPH
     # ======================================
     update_graph(event)
 
@@ -45,20 +53,19 @@ def process_transaction(event: dict):
     graph_community = graph_result.get("community")
 
     # ======================================
-    # VELOCITY LAYER
+    # VELOCITY
     # ======================================
     update_velocity(event)
     velocity_clusters = detect_velocity_cluster(event)
     velocity_score = len(velocity_clusters) * 15
 
     # ======================================
-    # ACCOUNT TAKEOVER
+    # ATO
     # ======================================
     update_account_behavior(event)
     ato_findings = detect_account_takeover(event)
 
     ato_score = 0
-
     for item in ato_findings:
         if item["type"] == "ACCOUNT_TAKEOVER_RISK":
             ato_score += 35
@@ -69,12 +76,11 @@ def process_transaction(event: dict):
     # NLP + HONEYPOT
     # ======================================
     description = event.get("description", "")
-
     signals = extract_signals(description)
     honeypot = analyze_honeypot_text(description)
 
     # ======================================
-    # INFRA SCORE
+    # BASE MODEL
     # ======================================
     infra_score = graph_score + velocity_score + ato_score
 
@@ -84,6 +90,27 @@ def process_transaction(event: dict):
         event=event,
         graph_signal=infra_score
     )
+
+    # ======================================
+    # REPUTATION MODIFIER
+    # ======================================
+    reputation_before = get_reputation(customer_id)
+    rep_adjustment = get_reputation_adjustment(customer_id)
+
+    score += rep_adjustment
+
+    if score > 100:
+        score = 100
+    if score < 0:
+        score = 0
+
+    # Recalculate category
+    if score >= 75:
+        category = "High"
+    elif score >= 40:
+        category = "Medium"
+    else:
+        category = "Low"
 
     # ======================================
     # REASONING
@@ -99,12 +126,12 @@ def process_transaction(event: dict):
     action = decide_action(category, confidence_level, score)
 
     # ======================================
-    # RESPONSE
+    # RESULT
     # ======================================
     result = {
         "decision_id": decision_id,
         "transaction_id": event.get("transaction_id"),
-        "customer_id": event.get("customer_id"),
+        "customer_id": customer_id,
 
         "risk_score": score,
         "risk_category": category,
@@ -112,6 +139,9 @@ def process_transaction(event: dict):
         "confidence_level": confidence_level,
         "recommended_action": action,
         "reasoning": reasoning,
+
+        "reputation_before": reputation_before,
+        "reputation_adjustment": rep_adjustment,
 
         "graph_score": graph_score,
         "graph_signals": graph_signals,
@@ -137,11 +167,14 @@ def process_transaction(event: dict):
         "contribution": contribution
     }
 
+    # ======================================
+    # UPDATE REPUTATION AFTER DECISION
+    # ======================================
+    update_reputation(customer_id, result)
+
     print("DECISION:", action)
-    print("GRAPH SCORE:", graph_score)
-    print("GRAPH SIGNALS:", graph_signals)
-    print("VELOCITY SCORE:", velocity_score)
-    print("ATO SCORE:", ato_score)
+    print("REPUTATION BEFORE:", reputation_before)
+    print("REPUTATION ADJUSTMENT:", rep_adjustment)
 
     log_decision(event, result, signals, honeypot)
 
