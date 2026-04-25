@@ -1,21 +1,28 @@
 import logging
 import json
 from collections import Counter
+
 from services.investigation_services import get_recent_customer_events
 from services.cluster_service import detect_live_cluster
-from services.graph_service import detect_graph_cluster
+from services.graph_service import (
+    detect_graph_cluster,
+    detect_fraud_community
+)
 
 logger = logging.getLogger("alerts")
 
 
-def emit_alert(result: dict, event:dict):
+def emit_alert(result: dict, event: dict):
 
     customer_id = result.get("customer_id")
 
     if not customer_id:
-        logger.error("Missing customer_id in alert")
+        logger.error("ALERT FAILED: missing customer_id")
         return
 
+    # ==================================================
+    # CUSTOMER HISTORY
+    # ==================================================
     history = get_recent_customer_events(customer_id)
 
     alert_payload = {
@@ -30,75 +37,54 @@ def emit_alert(result: dict, event:dict):
 
     logger.warning(json.dumps(alert_payload))
 
-    # --- Wave Detection ---
-    try:
-
-        primary_factors = [
-            e.get("primary_factor")
-            for e in history
-            if e.get("risk_category") == "High"
-        ]
-
-        counter = Counter(primary_factors)
-
-        for tactic, count in counter.items():
-
-            if count >= 5:
-                logger.critical(
-                    json.dumps({
-                        "type": "COORDINATED_ATTACK_WAVE",
-                        "dominant_tactic": tactic,
-                        "case_count": count
-                    })
-                )
-
-    except Exception as e:
-        logger.error(f"Wave detection error: {str(e)}")
-
-    # --- Cluster Detection ---
+    # ==================================================
+    # CLASSIC FRAUD RING DETECTION
+    # ==================================================
     cluster_input = {
-        "customer_id": result.get("customer_id"),
+        "customer_id": customer_id,
         "primary_factor": result.get("contribution", {}).get("primary_factor"),
-        "refund_count_last_30_days": result.get("evidence", {})
-        .get("behavioral_signals", {})
-        .get("refund_count_last_30_days", 0)
+        "refund_count_last_30_days": result.get(
+            "evidence", {}
+        ).get(
+            "behavioral_signals", {}
+        ).get(
+            "refund_count_last_30_days", 0
+        )
     }
 
     cluster = detect_live_cluster(cluster_input)
 
-    print("RUNNING CLUSTER CHECK")
-    print("CLUSTER RESULT:", cluster)
-
     if cluster:
+        logger.critical(json.dumps({
+            "type": "FRAUD_RING_DETECTED",
+            "signature": cluster["signature"],
+            "affected_customers": cluster["customers"],
+            "cluster_size": cluster["cluster_size"]
+        }))
 
-        logger.critical(
-            json.dumps({
-                "type": "FRAUD_RING_DETECTED",
-                "signature": cluster["signature"],
-                "affected_customers": cluster["customers"],
+    # ==================================================
+    # GRAPH CLUSTER DETECTION
+    # ==================================================
+    graph_clusters = detect_graph_cluster(event)
+
+    if graph_clusters:
+        for cluster in graph_clusters:
+            logger.critical(json.dumps({
+                "type": "GRAPH_CLUSTER_DETECTED",
+                "cluster_type": cluster["type"],
+                "entity": cluster["entity"],
+                "customers": cluster["customers"],
                 "cluster_size": cluster["cluster_size"]
-            })
-        )
+            }))
 
-    graph_input = {
-        "customer_id": result.get("customer_id"),
-        "device_id": result.get("device_id"),
-        "ip_address": result.get("ip_address"),
-        "payment_method_hash": result.get("payment_method_hash"),
-        "shipping_address_hash": result.get("shipping_address_hash"),
-        "email_hash": result.get("email_hash"),
-        "phone_hash": result.get("phone_hash")
-    }
+    # ==================================================
+    # GRAPH COMMUNITY DETECTION
+    # ==================================================
+    community = detect_fraud_community(customer_id)
 
-    graph_cluster = detect_graph_cluster(event)
-
-    if graph_cluster:
-        logger.critical(
-            json.dumps({
-                "type": "FRAUD_NETWORK_DETECTED",
-                "cluster_type": graph_cluster["type"],
-                "entity": graph_cluster["entity"],
-                "affected_customers": graph_cluster["customers"],
-                "cluster_size": graph_cluster["cluster_size"]
-            })
-        )
+    if community:
+        logger.critical(json.dumps({
+            "type": "FRAUD_NETWORK_COMMUNITY",
+            "customers": community["customers"],
+            "community_size": community["community_size"]
+        }))
