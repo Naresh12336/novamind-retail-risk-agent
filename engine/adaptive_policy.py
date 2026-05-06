@@ -101,6 +101,28 @@ def adaptive_decide_action(
         return "Request Customer Verification"
 
     # ======================================
+    # ASN OVERRIDE LOGIC
+    # ======================================
+    asn_signals = event.get("asn_signals", [])
+
+    if "fraud_heavy_asn" in asn_signals:
+
+        if reputation_before < 60:
+            return "Auto Block Transaction"
+
+        return "Manual Review Required"
+
+    if "fraud_network_asn" in asn_signals:
+
+        if graph_signals:
+            return "Auto Block Transaction"
+
+        return "Manual Review Required"
+
+    if "ato_heavy_asn" in asn_signals:
+        return "Auto Block Transaction"
+
+    # ======================================
     # FINAL DECISION
     # ======================================
     if score >= block_threshold:

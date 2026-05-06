@@ -40,19 +40,19 @@ def emit_alert(result: dict, event: dict):
         logger.critical(json.dumps(community))
 
     # ======================================
-    # VELOCITY
+    # VELOCITY ALERTS
     # ======================================
     for item in result.get("velocity_clusters", []):
         logger.critical(json.dumps(item))
 
     # ======================================
-    # ACCOUNT TAKEOVER
+    # ACCOUNT TAKEOVER ALERTS
     # ======================================
     for item in result.get("ato_findings", []):
         logger.critical(json.dumps(item))
 
     # ======================================
-    # GEO RISK (NEW)
+    # GEO ALERTS
     # ======================================
     geo_signals = result.get("geo_signals", [])
     geo_profile = result.get("geo_profile", {})
@@ -62,4 +62,17 @@ def emit_alert(result: dict, event: dict):
             "type": "GEO_RISK_DETECTED",
             "signals": geo_signals,
             "location": geo_profile
+        }))
+
+    # ======================================
+    # ASN ALERTS (NEW)
+    # ======================================
+    asn_signals = result.get("asn_signals", [])
+    asn_profile = result.get("asn_profile", {})
+
+    if asn_signals:
+        logger.critical(json.dumps({
+            "type": "ASN_RISK_DETECTED",
+            "signals": asn_signals,
+            "asn_profile": asn_profile
         }))

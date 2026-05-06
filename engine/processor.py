@@ -8,6 +8,13 @@ from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
 from services.geo_service import evaluate_geo_risk
+from services.geo_asn_service import (
+    evaluate_asn_risk
+)
+
+from services.asn_reputation_service import (
+    update_asn_profile
+)
 
 from services.graph_service import (
     update_graph,
@@ -84,6 +91,17 @@ def process_transaction(event: dict):
     geo_profile = geo_result.get("profile", {})
 
     # ======================================
+    # ASN RISK LAYER
+    # ======================================
+    asn_result = evaluate_asn_risk(
+        event.get("ip_address")
+    )
+
+    asn_score = asn_result.get("score", 0)
+    asn_signals = asn_result.get("signals", [])
+    asn_profile = asn_result.get("profile", {})
+
+    # ======================================
     # NLP + HONEYPOT
     # ======================================
     description = event.get("description", "")
@@ -93,7 +111,7 @@ def process_transaction(event: dict):
     # ======================================
     # BASE MODEL
     # ======================================
-    infra_score = graph_score + velocity_score + ato_score + geo_score
+    infra_score = graph_score + velocity_score + ato_score + geo_score + asn_score
 
     score, category, confidence_score, confidence_level = calculate_risk(
         signals=signals,
@@ -139,7 +157,8 @@ def process_transaction(event: dict):
         confidence_level=confidence_level,
         event={
             **event,
-            "geo_signals": geo_signals
+            "geo_signals": geo_signals,
+            "asn_signals": asn_signals
         },
         reputation_before=reputation_before,
         graph_signals=graph_signals,
@@ -156,6 +175,9 @@ def process_transaction(event: dict):
     print("GEO SCORE:", geo_score)
     print("GEO SIGNALS:", geo_signals)
     print("GEO PROFILE:", geo_profile)
+    print("ASN SCORE:", asn_score)
+    print("ASN SIGNALS:", asn_signals)
+    print("ASN PROFILE:", asn_profile)
 
     # ======================================
     # RESULT
@@ -190,6 +212,10 @@ def process_transaction(event: dict):
         "geo_signals": geo_signals,
         "geo_profile": geo_profile,
 
+        "asn_score": asn_score,
+        "asn_signals": asn_signals,
+        "asn_profile": asn_profile,
+
         "evidence": {
             "textual_signals": signals,
             "honeypot_signals": honeypot,
@@ -202,6 +228,15 @@ def process_transaction(event: dict):
 
         "contribution": contribution
     }
+
+    # Update ASN Reputation Score
+    update_asn_profile(
+        asn_number=asn_profile.get("asn"),
+        result=result,
+        geo_signals=geo_signals,
+        graph_signals=graph_signals,
+        ato_findings=ato_findings
+    )
 
     # ======================================
     # UPDATE REPUTATION AFTER DECISION
