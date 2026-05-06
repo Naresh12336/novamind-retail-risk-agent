@@ -7,6 +7,7 @@ from engine.decision_policy import decide_action
 from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
+from services.geo_service import evaluate_geo_risk
 
 from services.graph_service import (
     update_graph,
@@ -74,6 +75,15 @@ def process_transaction(event: dict):
             ato_score += 15
 
     # ======================================
+    # GEO RISK LAYER
+    # ======================================
+    geo_result = evaluate_geo_risk(event)
+
+    geo_score = geo_result.get("score", 0)
+    geo_signals = geo_result.get("signals", [])
+    geo_profile = geo_result.get("profile", {})
+
+    # ======================================
     # NLP + HONEYPOT
     # ======================================
     description = event.get("description", "")
@@ -83,7 +93,7 @@ def process_transaction(event: dict):
     # ======================================
     # BASE MODEL
     # ======================================
-    infra_score = graph_score + velocity_score + ato_score
+    infra_score = graph_score + velocity_score + ato_score + geo_score
 
     score, category, confidence_score, confidence_level = calculate_risk(
         signals=signals,
@@ -127,7 +137,10 @@ def process_transaction(event: dict):
     action = adaptive_decide_action(
         score=score,
         confidence_level=confidence_level,
-        event=event,
+        event={
+            **event,
+            "geo_signals": geo_signals
+        },
         reputation_before=reputation_before,
         graph_signals=graph_signals,
         velocity_clusters=velocity_clusters,
@@ -140,6 +153,9 @@ def process_transaction(event: dict):
     print("GRAPH SIGNAL COUNT:", len(graph_signals))
     print("VELOCITY COUNT:", len(velocity_clusters))
     print("ATO COUNT:", len(ato_findings))
+    print("GEO SCORE:", geo_score)
+    print("GEO SIGNALS:", geo_signals)
+    print("GEO PROFILE:", geo_profile)
 
     # ======================================
     # RESULT
@@ -169,6 +185,10 @@ def process_transaction(event: dict):
 
         "ato_score": ato_score,
         "ato_findings": ato_findings,
+
+        "geo_score": geo_score,
+        "geo_signals": geo_signals,
+        "geo_profile": geo_profile,
 
         "evidence": {
             "textual_signals": signals,

@@ -81,6 +81,26 @@ def adaptive_decide_action(
     verify_threshold = max(10, verify_threshold)
 
     # ======================================
+    # GEO CRITICAL OVERRIDE
+    # ======================================
+    geo_signals = event.get("geo_signals", [])
+
+    if "impossible_travel" in geo_signals:
+        if reputation_before < 70:
+            return "Auto Block Transaction"
+        return "Request Customer Verification"
+
+    if "new_country_access" in geo_signals:
+        if reputation_before < 50:
+            return "Manual Review Required"
+
+    if "rapid_geo_movement" in geo_signals:
+        return "Manual Review Required"
+
+    if "city_change_anomaly" in geo_signals:
+        return "Request Customer Verification"
+
+    # ======================================
     # FINAL DECISION
     # ======================================
     if score >= block_threshold:

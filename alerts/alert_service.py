@@ -50,3 +50,16 @@ def emit_alert(result: dict, event: dict):
     # ======================================
     for item in result.get("ato_findings", []):
         logger.critical(json.dumps(item))
+
+    # ======================================
+    # GEO RISK (NEW)
+    # ======================================
+    geo_signals = result.get("geo_signals", [])
+    geo_profile = result.get("geo_profile", {})
+
+    if geo_signals:
+        logger.critical(json.dumps({
+            "type": "GEO_RISK_DETECTED",
+            "signals": geo_signals,
+            "location": geo_profile
+        }))
