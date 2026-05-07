@@ -37,6 +37,10 @@ from services.reputation_service import (
     update_reputation
 )
 
+from ml.inference_service import (
+    predict_fraud_risk
+)
+
 import uuid
 
 print("PROCESSING EVENT")
@@ -120,6 +124,7 @@ def process_transaction(event: dict):
         graph_signal=infra_score
     )
 
+
     # ======================================
     # REPUTATION MODIFIER
     # ======================================
@@ -140,6 +145,71 @@ def process_transaction(event: dict):
         category = "Medium"
     else:
         category = "Low"
+
+    # ======================================
+    # ML INFERENCE LAYER
+    # ======================================
+    partial_result = {
+
+        "risk_score": score,
+
+        "risk_category": category,
+
+        "graph_score": graph_score,
+        "velocity_score": velocity_score,
+        "ato_score": ato_score,
+        "geo_score": geo_score,
+        "asn_score": asn_score,
+
+        "graph_signals": graph_signals,
+
+        "velocity_clusters": velocity_clusters,
+
+        "ato_findings": ato_findings,
+
+        "geo_signals": geo_signals,
+
+        "asn_signals": asn_signals,
+
+        "reputation_before": reputation_before,
+
+        "evidence": {
+            "textual_signals": signals,
+
+            "behavioral_signals": {
+                "amount": event.get("amount", 0),
+
+                "refund_count_last_30_days":
+                    event.get(
+                        "refund_count_last_30_days",
+                        0
+                    ),
+
+                "account_age_days":
+                    event.get(
+                        "account_age_days",
+                        0
+                    )
+            },
+
+            "honeypot_signals": honeypot
+        }
+    }
+
+    ml_result = predict_fraud_risk(
+        event,
+        partial_result
+    )
+
+    ml_prediction = ml_result.get(
+        "prediction",
+        0
+    )
+
+    ml_probability = ml_result.get(
+        "fraud_probability",
+        0
+    )
 
     # ======================================
     # REASONING
@@ -166,6 +236,21 @@ def process_transaction(event: dict):
         ato_findings=ato_findings
     )
 
+    # ======================================
+    # ML OVERRIDE
+    # ======================================
+    if ml_probability >= 0.90:
+
+        if action == "Allow Transaction":
+            action = (
+                "Manual Review Required"
+            )
+
+    if ml_probability >= 0.97:
+        action = (
+            "Auto Block Transaction"
+        )
+
     print("ADAPTIVE DECISION:", action)
     print("BASE SCORE:", score)
     print("REPUTATION:", reputation_before)
@@ -178,6 +263,8 @@ def process_transaction(event: dict):
     print("ASN SCORE:", asn_score)
     print("ASN SIGNALS:", asn_signals)
     print("ASN PROFILE:", asn_profile)
+    print("ML PREDICTION:", ml_prediction)
+    print("ML FRAUD PROBABILITY:", ml_probability)
 
     # ======================================
     # RESULT
@@ -226,7 +313,10 @@ def process_transaction(event: dict):
             }
         },
 
-        "contribution": contribution
+        "contribution": contribution,
+
+        "ml_prediction": ml_prediction,
+        "ml_probability": ml_probability,
     }
 
     # Update ASN Reputation Score

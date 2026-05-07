@@ -7,72 +7,220 @@ logger = logging.getLogger("alerts")
 def emit_alert(result: dict, event: dict):
 
     # ======================================
-    # PRIMARY ALERT
+    # PRIMARY ALERT PAYLOAD
     # ======================================
     payload = {
-        "decision_id": result.get("decision_id"),
-        "transaction_id": result.get("transaction_id"),
-        "customer_id": result.get("customer_id"),
 
-        "risk_score": result.get("risk_score"),
-        "risk_category": result.get("risk_category"),
-        "confidence_level": result.get("confidence_level"),
-        "recommended_action": result.get("recommended_action"),
+        "decision_id": result.get(
+            "decision_id"
+        ),
 
-        "reputation_before": result.get("reputation_before"),
-        "reputation_adjustment": result.get("reputation_adjustment")
+        "transaction_id": result.get(
+            "transaction_id"
+        ),
+
+        "customer_id": result.get(
+            "customer_id"
+        ),
+
+        "risk_score": result.get(
+            "risk_score"
+        ),
+
+        "risk_category": result.get(
+            "risk_category"
+        ),
+
+        "confidence_level": result.get(
+            "confidence_level"
+        ),
+
+        "recommended_action": result.get(
+            "recommended_action"
+        ),
+
+        # ----------------------------------
+        # ML
+        # ----------------------------------
+        "ml_prediction": result.get(
+            "ml_prediction"
+        ),
+
+        "ml_probability": result.get(
+            "ml_probability"
+        ),
+
+        # ----------------------------------
+        # INFRASTRUCTURE
+        # ----------------------------------
+        "graph_score": result.get(
+            "graph_score"
+        ),
+
+        "velocity_score": result.get(
+            "velocity_score"
+        ),
+
+        "ato_score": result.get(
+            "ato_score"
+        ),
+
+        "geo_score": result.get(
+            "geo_score"
+        ),
+
+        "asn_score": result.get(
+            "asn_score"
+        )
     }
 
-    logger.warning(json.dumps(payload))
+    logger.warning(
+        json.dumps(payload)
+    )
 
     # ======================================
-    # GRAPH CLUSTERS
+    # GRAPH SIGNALS
     # ======================================
-    for cluster in result.get("graph_clusters", []):
-        logger.critical(json.dumps(cluster))
+    graph_signals = result.get(
+        "graph_signals",
+        []
+    )
+
+    for signal in graph_signals:
+
+        logger.critical(
+            json.dumps({
+
+                "type":
+                    "GRAPH_CLUSTER_DETECTED",
+
+                "cluster_type":
+                    signal
+            })
+        )
 
     # ======================================
-    # GRAPH COMMUNITY
+    # GEO SIGNALS
     # ======================================
-    community = result.get("graph_community")
+    geo_signals = result.get(
+        "geo_signals",
+        []
+    )
 
-    if community:
-        logger.critical(json.dumps(community))
+    if geo_signals:
+
+        logger.critical(
+            json.dumps({
+
+                "type":
+                    "GEO_RISK_DETECTED",
+
+                "signals":
+                    geo_signals,
+
+                "geo_profile":
+                    result.get(
+                        "geo_profile"
+                    )
+            })
+        )
+
+    # ======================================
+    # ASN SIGNALS
+    # ======================================
+    asn_signals = result.get(
+        "asn_signals",
+        []
+    )
+
+    if asn_signals:
+
+        logger.critical(
+            json.dumps({
+
+                "type":
+                    "ASN_RISK_DETECTED",
+
+                "signals":
+                    asn_signals,
+
+                "asn_profile":
+                    result.get(
+                        "asn_profile"
+                    )
+            })
+        )
 
     # ======================================
     # VELOCITY ALERTS
     # ======================================
-    for item in result.get("velocity_clusters", []):
-        logger.critical(json.dumps(item))
+    velocity_clusters = result.get(
+        "velocity_clusters",
+        []
+    )
+
+    for item in velocity_clusters:
+
+        logger.critical(
+            json.dumps({
+
+                "type":
+                    item.get("type"),
+
+                "entity":
+                    item.get("entity"),
+
+                "count":
+                    item.get("count"),
+
+                "window_minutes":
+                    item.get(
+                        "window_minutes"
+                    ),
+
+                "severity":
+                    item.get(
+                        "severity"
+                    )
+            })
+        )
 
     # ======================================
-    # ACCOUNT TAKEOVER ALERTS
+    # ACCOUNT TAKEOVER
     # ======================================
-    for item in result.get("ato_findings", []):
-        logger.critical(json.dumps(item))
+    ato_findings = result.get(
+        "ato_findings",
+        []
+    )
+
+    for item in ato_findings:
+
+        logger.critical(
+            json.dumps(item)
+        )
 
     # ======================================
-    # GEO ALERTS
+    # ML ESCALATION
     # ======================================
-    geo_signals = result.get("geo_signals", [])
-    geo_profile = result.get("geo_profile", {})
+    ml_probability = result.get(
+        "ml_probability",
+        0
+    )
 
-    if geo_signals:
-        logger.critical(json.dumps({
-            "type": "GEO_RISK_DETECTED",
-            "signals": geo_signals,
-            "location": geo_profile
-        }))
+    if ml_probability >= 0.95:
 
-    # ======================================
-    # ASN ALERTS (NEW)
-    # ======================================
-    asn_signals = result.get("asn_signals", [])
-    asn_profile = result.get("asn_profile", {})
+        logger.critical(
+            json.dumps({
 
-    if asn_signals:
-        logger.critical(json.dumps({
-            "type": "ASN_RISK_DETECTED",
-            "signals": asn_signals,
-            "asn_profile": asn_profile
-        }))
+                "type":
+                    "ML_HIGH_CONFIDENCE_FRAUD",
+
+                "ml_probability":
+                    ml_probability,
+
+                "transaction_id":
+                    result.get(
+                        "transaction_id"
+                    )
+            })
+        )

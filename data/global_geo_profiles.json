@@ -1,0 +1,133 @@
+{
+  "india": {
+    "ips": [
+      "49.37.10.1",
+      "103.21.244.1",
+      "125.16.100.1"
+    ],
+    "fraud_rate": 0.15,
+    "travel_frequency": 0.20,
+    "preferred_asn_type": "residential"
+  },
+
+  "usa": {
+    "ips": [
+      "8.8.8.8",
+      "1.1.1.1",
+      "104.244.72.115"
+    ],
+    "fraud_rate": 0.25,
+    "travel_frequency": 0.50,
+    "preferred_asn_type": "mixed"
+  },
+
+  "canada": {
+    "ips": [
+      "24.48.0.1",
+      "99.224.0.1"
+    ],
+    "fraud_rate": 0.18,
+    "travel_frequency": 0.40,
+    "preferred_asn_type": "residential"
+  },
+
+  "uk": {
+    "ips": [
+      "81.2.69.1",
+      "51.140.0.1"
+    ],
+    "fraud_rate": 0.30,
+    "travel_frequency": 0.55,
+    "preferred_asn_type": "mixed"
+  },
+
+  "germany": {
+    "ips": [
+      "91.0.0.1",
+      "85.214.132.117"
+    ],
+    "fraud_rate": 0.35,
+    "travel_frequency": 0.60,
+    "preferred_asn_type": "hosting"
+  },
+
+  "netherlands": {
+    "ips": [
+      "51.15.0.1",
+      "185.220.101.1"
+    ],
+    "fraud_rate": 0.60,
+    "travel_frequency": 0.70,
+    "preferred_asn_type": "hosting"
+  },
+
+  "singapore": {
+    "ips": [
+      "45.64.100.1",
+      "103.15.20.1"
+    ],
+    "fraud_rate": 0.20,
+    "travel_frequency": 0.80,
+    "preferred_asn_type": "cloud"
+  },
+
+  "uae": {
+    "ips": [
+      "86.96.0.1",
+      "94.200.0.1"
+    ],
+    "fraud_rate": 0.22,
+    "travel_frequency": 0.75,
+    "preferred_asn_type": "mixed"
+  },
+
+  "brazil": {
+    "ips": [
+      "177.0.0.1",
+      "200.147.0.1"
+    ],
+    "fraud_rate": 0.28,
+    "travel_frequency": 0.45,
+    "preferred_asn_type": "residential"
+  },
+
+  "japan": {
+    "ips": [
+      "133.0.0.1",
+      "210.130.0.1"
+    ],
+    "fraud_rate": 0.12,
+    "travel_frequency": 0.50,
+    "preferred_asn_type": "residential"
+  },
+
+  "australia": {
+    "ips": [
+      "139.130.0.1",
+      "203.0.113.1"
+    ],
+    "fraud_rate": 0.17,
+    "travel_frequency": 0.35,
+    "preferred_asn_type": "mixed"
+  },
+
+  "nigeria": {
+    "ips": [
+      "41.58.0.1",
+      "105.112.0.1"
+    ],
+    "fraud_rate": 0.55,
+    "travel_frequency": 0.30,
+    "preferred_asn_type": "mixed"
+  },
+
+  "russia": {
+    "ips": [
+      "95.24.0.1",
+      "178.45.0.1"
+    ],
+    "fraud_rate": 0.48,
+    "travel_frequency": 0.40,
+    "preferred_asn_type": "hosting"
+  }
+}
