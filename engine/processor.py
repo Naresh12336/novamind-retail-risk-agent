@@ -41,6 +41,10 @@ from ml.inference_service import (
     predict_fraud_risk
 )
 
+from ml.explainability_service import (
+    explain_prediction
+)
+
 import uuid
 
 print("PROCESSING EVENT")
@@ -212,6 +216,23 @@ def process_transaction(event: dict):
     )
 
     # ======================================
+    # ML EXPLAINABILITY
+    # ======================================
+    ml_explanation = explain_prediction(
+        ml_result.get(
+            "features",
+            {}
+        )
+    )
+
+    top_ml_contributors = (
+        ml_explanation.get(
+            "top_contributors",
+            []
+        )
+    )
+
+    # ======================================
     # REASONING
     # ======================================
     if category in ["Medium", "High"]:
@@ -265,6 +286,10 @@ def process_transaction(event: dict):
     print("ASN PROFILE:", asn_profile)
     print("ML PREDICTION:", ml_prediction)
     print("ML FRAUD PROBABILITY:", ml_probability)
+    print(
+        "ML TOP CONTRIBUTORS:",
+        top_ml_contributors
+    )
 
     # ======================================
     # RESULT
@@ -317,6 +342,7 @@ def process_transaction(event: dict):
 
         "ml_prediction": ml_prediction,
         "ml_probability": ml_probability,
+        "ml_explanation": top_ml_contributors,
     }
 
     # Update ASN Reputation Score

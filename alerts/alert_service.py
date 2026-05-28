@@ -200,6 +200,32 @@ def emit_alert(result: dict, event: dict):
         )
 
     # ======================================
+    # ML EXPLAINABILITY
+    # ======================================
+    ml_explanation = result.get(
+        "ml_explanation",
+        []
+    )
+
+    if ml_explanation:
+
+        logger.critical(
+            json.dumps({
+
+                "type":
+                    "ML_EXPLAINABILITY",
+
+                "top_contributors":
+                    ml_explanation,
+
+                "transaction_id":
+                    result.get(
+                        "transaction_id"
+                    )
+            })
+        )
+
+    # ======================================
     # ML ESCALATION
     # ======================================
     ml_probability = result.get(
