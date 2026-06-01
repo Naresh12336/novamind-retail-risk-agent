@@ -204,3 +204,57 @@ def log_decision(
         f.write(
             json.dumps(record) + "\n"
         )
+# ==========================================
+# HISTORY ACCESSORS
+# ==========================================
+def get_decision_history():
+
+    if not LOG_FILE.exists():
+        return []
+
+    history = []
+
+    with open(
+        LOG_FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        for line in f:
+
+            line = line.strip()
+
+            if not line:
+                continue
+
+            try:
+
+                history.append(
+                    json.loads(line)
+                )
+
+            except Exception:
+                continue
+
+    return history
+
+
+# ==========================================
+# CUSTOMER HISTORY
+# ==========================================
+def get_customer_history(
+    customer_id
+):
+
+    history = get_decision_history()
+
+    return [
+
+        item
+
+        for item in history
+
+        if item.get(
+            "customer_id"
+        ) == customer_id
+    ]

@@ -130,3 +130,13 @@ def evaluate_dynamic_asn_risk(asn_number):
         "signals": signals,
         "profile": stats
     }
+
+# ==========================================
+# GET ASN PROFILE
+# ==========================================
+def get_asn_profile(asn_number):
+
+    if not asn_number:
+        return None
+
+    return asn_stats.get(asn_number)

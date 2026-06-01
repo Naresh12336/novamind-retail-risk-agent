@@ -45,6 +45,10 @@ from ml.explainability_service import (
     explain_prediction
 )
 
+from case_management.case_service import (
+        create_case
+    )
+
 import uuid
 
 print("PROCESSING EVENT")
@@ -367,5 +371,20 @@ def process_transaction(event: dict):
 
     if action in ["Manual Review Required", "Auto Block Transaction"]:
         emit_alert(result, event)
+
+
+
+    if action in [
+
+        "Manual Review Required",
+
+        "Request Customer Verification",
+
+        "Auto Block Transaction"
+
+    ]:
+        case = create_case(result)
+
+        result["case"] = case
 
     return result
