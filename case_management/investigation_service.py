@@ -14,6 +14,10 @@ from case_management.case_store import (
     case_db
 )
 
+from llm.investigation_narrator import (
+    generate_investigation_report
+)
+
 
 # ==================================================
 # BUILD INVESTIGATION PACKET
@@ -124,6 +128,11 @@ def build_investigation_packet(case_id):
         "investigation_summary":
             summary
     }
+    packet[
+        "llm_report"
+    ] = generate_investigation_report(
+        packet
+    )
 
     return packet
 
