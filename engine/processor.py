@@ -3,7 +3,6 @@ from engine.adaptive_policy import adaptive_decide_action
 from engine.honeypot import analyze_honeypot_text
 from engine.risk_model import calculate_risk
 from engine.reasoning import generate_reasoning
-from engine.decision_policy import decide_action
 from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
@@ -49,7 +48,16 @@ from case_management.case_service import (
         create_case
     )
 
+from threat_intelligence.threat_feed_service import (
+    evaluate_threat_intelligence
+)
+
+from threat_intelligence.update_threat_intelligence import (
+    update_threat_intelligence
+)
+
 import uuid
+
 
 print("PROCESSING EVENT")
 
@@ -109,9 +117,45 @@ def process_transaction(event: dict):
         event.get("ip_address")
     )
 
-    asn_score = asn_result.get("score", 0)
-    asn_signals = asn_result.get("signals", [])
-    asn_profile = asn_result.get("profile", {})
+    asn_score = asn_result.get(
+        "score",
+        0
+    )
+
+    asn_signals = asn_result.get(
+        "signals",
+        []
+    )
+
+    asn_profile = asn_result.get(
+        "profile",
+        {}
+    )
+
+    # ======================================
+    # THREAT INTELLIGENCE
+    # ======================================
+    threat_result = (
+        evaluate_threat_intelligence(
+            event
+        )
+    )
+
+    threat_score = threat_result.get(
+        "score",
+        0
+    )
+
+    threat_signals = threat_result.get(
+        "signals",
+        []
+    )
+
+    threat_profile = threat_result.get(
+        "profile",
+        {}
+    )
+
 
     # ======================================
     # NLP + HONEYPOT
@@ -123,7 +167,7 @@ def process_transaction(event: dict):
     # ======================================
     # BASE MODEL
     # ======================================
-    infra_score = graph_score + velocity_score + ato_score + geo_score + asn_score
+    infra_score = graph_score + velocity_score + ato_score + geo_score + asn_score + threat_score
 
     score, category, confidence_score, confidence_level = calculate_risk(
         signals=signals,
@@ -178,6 +222,10 @@ def process_transaction(event: dict):
         "geo_signals": geo_signals,
 
         "asn_signals": asn_signals,
+
+        "threat_score": threat_score,
+
+        "threat_signals": threat_signals,
 
         "reputation_before": reputation_before,
 
@@ -332,6 +380,10 @@ def process_transaction(event: dict):
         "asn_signals": asn_signals,
         "asn_profile": asn_profile,
 
+        "threat_score": threat_score,
+        "threat_signals":threat_signals,
+        "threat_profile":threat_profile,
+
         "evidence": {
             "textual_signals": signals,
             "honeypot_signals": honeypot,
@@ -349,31 +401,6 @@ def process_transaction(event: dict):
         "ml_explanation": top_ml_contributors,
     }
 
-    # Update ASN Reputation Score
-    update_asn_profile(
-        asn_number=asn_profile.get("asn"),
-        result=result,
-        geo_signals=geo_signals,
-        graph_signals=graph_signals,
-        ato_findings=ato_findings
-    )
-
-    # ======================================
-    # UPDATE REPUTATION AFTER DECISION
-    # ======================================
-    update_reputation(customer_id, result)
-
-    print("DECISION:", action)
-    print("REPUTATION BEFORE:", reputation_before)
-    print("REPUTATION ADJUSTMENT:", rep_adjustment)
-
-    log_decision(event, result, signals, honeypot)
-
-    if action in ["Manual Review Required", "Auto Block Transaction"]:
-        emit_alert(result, event)
-
-
-
     if action in [
 
         "Manual Review Required",
@@ -384,7 +411,39 @@ def process_transaction(event: dict):
 
     ]:
         case = create_case(result)
-
         result["case"] = case
+
+    # ======================================
+    # UPDATE ASN REPUTATION
+    # ======================================
+    update_asn_profile(
+        asn_number=asn_profile.get("asn"),
+        result=result,
+        geo_signals=geo_signals,
+        graph_signals=graph_signals,
+        ato_findings=ato_findings
+    )
+
+    # ======================================
+    # UPDATE THREAT INTELLIGENCE
+    # ======================================
+    update_threat_intelligence(event,result)
+
+    # ======================================
+    # UPDATE CUSTOMER REPUTATION
+    # ======================================
+    update_reputation(customer_id,result)
+
+    print("DECISION:", action)
+    print("REPUTATION BEFORE:", reputation_before)
+    print("REPUTATION ADJUSTMENT:", rep_adjustment)
+
+    # ======================================
+    # LOG DECISION
+    # ======================================
+    log_decision(event, result,signals,honeypot)
+
+    if action in ["Manual Review Required", "Auto Block Transaction"]:
+        emit_alert(result, event)
 
     return result
