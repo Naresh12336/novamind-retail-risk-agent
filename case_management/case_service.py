@@ -115,6 +115,18 @@ def build_evidence(result):
                 {}
             ),
 
+        "trust_profile":
+            result.get(
+                "trust_profile",
+                {}
+            ),
+
+        "trust_signals":
+            result.get(
+                "trust_signals",
+                []
+            ),
+
         "ato_findings":
             result.get(
                 "ato_findings",

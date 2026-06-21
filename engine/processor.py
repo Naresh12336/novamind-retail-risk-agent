@@ -56,6 +56,14 @@ from threat_intelligence.update_threat_intelligence import (
     update_threat_intelligence
 )
 
+from trust_engine.trust_service import (
+    evaluate_trust
+)
+
+from trust_engine.trust_updater import (
+    update_entity_trust
+)
+
 import uuid
 
 
@@ -156,6 +164,20 @@ def process_transaction(event: dict):
         {}
     )
 
+    trust_result = (
+        evaluate_trust(
+            event
+        )
+    )
+
+    trust_score = (
+        trust_result["score"]
+    )
+
+    trust_signals = (
+        trust_result["signals"]
+    )
+
 
     # ======================================
     # NLP + HONEYPOT
@@ -167,7 +189,8 @@ def process_transaction(event: dict):
     # ======================================
     # BASE MODEL
     # ======================================
-    infra_score = graph_score + velocity_score + ato_score + geo_score + asn_score + threat_score
+    infra_score = (graph_score + velocity_score + ato_score + geo_score + asn_score
+                   + threat_score + trust_score)
 
     score, category, confidence_score, confidence_level = calculate_risk(
         signals=signals,
@@ -384,6 +407,10 @@ def process_transaction(event: dict):
         "threat_signals":threat_signals,
         "threat_profile":threat_profile,
 
+        "trust_score": trust_score,
+        "trust_signals": trust_signals,
+        "trust_profile": trust_result,
+
         "evidence": {
             "textual_signals": signals,
             "honeypot_signals": honeypot,
@@ -428,6 +455,8 @@ def process_transaction(event: dict):
     # UPDATE THREAT INTELLIGENCE
     # ======================================
     update_threat_intelligence(event,result)
+
+    update_entity_trust(event,result)
 
     # ======================================
     # UPDATE CUSTOMER REPUTATION

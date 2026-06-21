@@ -59,6 +59,13 @@ def build_investigation_packet(case_id):
         asn_number
     )
 
+    trust_profile = (
+        case["evidence"].get(
+            "trust_profile",
+            {}
+        )
+    )
+
     # ==========================================
     # INVESTIGATION SUMMARY
     # ==========================================
@@ -122,6 +129,9 @@ def build_investigation_packet(case_id):
                 {}
             ),
 
+        "trust_profile":
+            trust_profile,
+
         # --------------------------
         # ANALYST SUMMARY
         # --------------------------
@@ -146,6 +156,15 @@ def generate_summary(
     reputation,
     asn_reputation
 ):
+    trust_profile = (
+        case.get(
+            "evidence",
+            {}
+        ).get(
+            "trust_profile",
+            {}
+        )
+    )
 
     findings = []
 
@@ -268,6 +287,29 @@ def generate_summary(
         findings.append(
             f"ML model's strongest signal: "
             f"{top_feature.get('feature')}"
+        )
+
+    average_trust = trust_profile.get(
+        "average_trust",
+        50
+    )
+
+    if average_trust < 20:
+
+        findings.append(
+            "Customer belongs to a critical trust network"
+        )
+
+    elif average_trust < 35:
+
+        findings.append(
+            "Customer belongs to a low-trust network"
+        )
+
+    elif average_trust < 50:
+
+        findings.append(
+            "Trust degradation detected across linked entities"
         )
 
     # ==========================================

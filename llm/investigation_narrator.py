@@ -3,13 +3,21 @@ from llm.reasoning_templates import (
 )
 
 
-def generate_investigation_report(
-    packet
-):
+def generate_investigation_report(packet):
 
     evidence = packet.get(
         "evidence",
         {}
+    )
+
+    trust_profile = packet.get(
+        "trust_profile",
+        {}
+    )
+
+    avg_trust = trust_profile.get(
+        "average_trust",
+        50
     )
 
     findings = []
@@ -64,6 +72,15 @@ def generate_investigation_report(
             RISK_PATTERNS[
                 "ato_findings"
             ]
+        )
+
+    if avg_trust < 35:
+        findings.append(
+
+            f"Trust intelligence identified a "
+            f"low-trust entity network with "
+            f"average trust score "
+            f"{avg_trust}."
         )
 
     # ==========================
