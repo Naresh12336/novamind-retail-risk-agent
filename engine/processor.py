@@ -64,6 +64,10 @@ from trust_engine.trust_updater import (
     update_entity_trust
 )
 
+from engine.ml_decision_policy import (
+    apply_ml_policy
+)
+
 import uuid
 
 
@@ -185,6 +189,30 @@ def process_transaction(event: dict):
     description = event.get("description", "")
     signals = extract_signals(description)
     honeypot = analyze_honeypot_text(description)
+    evidence = {
+
+        "textual_signals": signals,
+
+        "behavioral_signals": {
+
+            "amount": event.get(
+                "amount",
+                0
+            ),
+
+            "refund_count_last_30_days": event.get(
+                "refund_count_last_30_days",
+                0
+            ),
+
+            "account_age_days": event.get(
+                "account_age_days",
+                0
+            )
+        },
+
+        "honeypot_signals": honeypot
+    }
 
     # ======================================
     # BASE MODEL
@@ -250,29 +278,16 @@ def process_transaction(event: dict):
 
         "threat_signals": threat_signals,
 
+        "trust_score": trust_score,
+
+        "trust_signals": trust_signals,
+
         "reputation_before": reputation_before,
 
-        "evidence": {
-            "textual_signals": signals,
+        "evidence": evidence,
 
-            "behavioral_signals": {
-                "amount": event.get("amount", 0),
+        "infrastructure_score": infra_score,
 
-                "refund_count_last_30_days":
-                    event.get(
-                        "refund_count_last_30_days",
-                        0
-                    ),
-
-                "account_age_days":
-                    event.get(
-                        "account_age_days",
-                        0
-                    )
-            },
-
-            "honeypot_signals": honeypot
-        }
     }
 
     ml_result = predict_fraud_risk(
@@ -332,24 +347,6 @@ def process_transaction(event: dict):
         ato_findings=ato_findings
     )
 
-    # ======================================
-    # ML OVERRIDE
-    # ======================================
-    if ml_probability >= 0.90:
-
-        if action == "Allow Transaction":
-            action = (
-                "Manual Review Required"
-            )
-
-    if ml_probability >= 0.97:
-        action = (
-            "Auto Block Transaction"
-        )
-
-    print("ADAPTIVE DECISION:", action)
-    print("BASE SCORE:", score)
-    print("REPUTATION:", reputation_before)
     print("GRAPH SIGNAL COUNT:", len(graph_signals))
     print("VELOCITY COUNT:", len(velocity_clusters))
     print("ATO COUNT:", len(ato_findings))
@@ -359,12 +356,20 @@ def process_transaction(event: dict):
     print("ASN SCORE:", asn_score)
     print("ASN SIGNALS:", asn_signals)
     print("ASN PROFILE:", asn_profile)
+    print("THREAT SCORE:", threat_score)
+    print("THREAT SIGNALS:", threat_signals)
+    print("THREAT PROFILE:", threat_profile)
+    print("TRUST SCORE:", trust_score)
+    print("TRUST SIGNALS:", trust_signals)
+    print("TRUST PROFILE:", trust_result)
     print("ML PREDICTION:", ml_prediction)
     print("ML FRAUD PROBABILITY:", ml_probability)
-    print(
-        "ML TOP CONTRIBUTORS:",
-        top_ml_contributors
-    )
+    print("ML TOP CONTRIBUTORS:", top_ml_contributors)
+    print("ADAPTIVE DECISION:", action)
+    print("BASE SCORE:", score)
+    print("REPUTATION:", reputation_before)
+
+
 
     # ======================================
     # RESULT
@@ -411,24 +416,22 @@ def process_transaction(event: dict):
         "trust_signals": trust_signals,
         "trust_profile": trust_result,
 
-        "evidence": {
-            "textual_signals": signals,
-            "honeypot_signals": honeypot,
-            "behavioral_signals": {
-                "refund_count_last_30_days": event.get("refund_count_last_30_days", 0),
-                "account_age_days": event.get("account_age_days", 0),
-                "amount": event.get("amount", 0)
-            }
-        },
+        "evidence": evidence,
 
         "contribution": contribution,
 
         "ml_prediction": ml_prediction,
         "ml_probability": ml_probability,
         "ml_explanation": top_ml_contributors,
+        "ml_result": ml_result,
+        "infrastructure_score": infra_score,
     }
 
-    if action in [
+    result = apply_ml_policy(result)
+
+    final_action = result["recommended_action"]
+
+    if final_action in [
 
         "Manual Review Required",
 
@@ -463,7 +466,7 @@ def process_transaction(event: dict):
     # ======================================
     update_reputation(customer_id,result)
 
-    print("DECISION:", action)
+    print("FINAL DECISION:", result["recommended_action"])
     print("REPUTATION BEFORE:", reputation_before)
     print("REPUTATION ADJUSTMENT:", rep_adjustment)
 
@@ -472,7 +475,7 @@ def process_transaction(event: dict):
     # ======================================
     log_decision(event, result,signals,honeypot)
 
-    if action in ["Manual Review Required", "Auto Block Transaction"]:
+    if final_action in ["Manual Review Required", "Auto Block Transaction"]:
         emit_alert(result, event)
 
     return result

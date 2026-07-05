@@ -1,29 +1,53 @@
-def decide_action(risk_category: str, confidence: str, score: int) -> str:
+from config.fraud_policy import (
+    AUTO_BLOCK_SCORE,
+    STEP_UP_SCORE,
+    CUSTOMER_VERIFICATION_SCORE
+)
 
-    # --- HIGH RISK ---
+# ==========================================
+# DECISION POLICY
+# ==========================================
+def decide_action(
+    risk_category: str,
+    confidence: str,
+    score: int
+) -> str:
+
+    # ======================================
+    # HIGH RISK
+    # ======================================
     if risk_category == "High":
 
-        if score >= 90:
+        if score >= AUTO_BLOCK_SCORE:
             return "Auto Block Transaction"
 
-        if confidence == "High":
+        elif confidence == "High":
             return "Manual Review Required"
 
-        if confidence == "Medium":
+        elif confidence == "Medium":
             return "Request Customer Verification"
 
-        return "Monitor Activity"
+        else:
+            return "Monitor Activity"
 
-    # --- MEDIUM RISK ---
-    if risk_category == "Medium":
+    # ======================================
+    # MEDIUM RISK
+    # ======================================
+    elif risk_category == "Medium":
 
-        if score >= 50 and confidence == "High":
+        if (
+            score >= STEP_UP_SCORE
+            and confidence == "High"
+        ):
             return "Step-Up Authentication"
 
-        if score >= 45:
+        elif score >= CUSTOMER_VERIFICATION_SCORE:
             return "Request Customer Verification"
 
-        return "Monitor Activity"
+        else:
+            return "Monitor Activity"
 
-    # --- LOW RISK ---
+    # ======================================
+    # LOW RISK
+    # ======================================
     return "Allow Transaction"
