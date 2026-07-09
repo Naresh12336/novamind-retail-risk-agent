@@ -6,28 +6,13 @@ from engine.reasoning import generate_reasoning
 from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
-from services.geo_service import evaluate_geo_risk
-from services.geo_asn_service import (
-    evaluate_asn_risk
+
+from services.infrastructure_intelligence import (
+    evaluate_infrastructure
 )
 
 from services.asn_reputation_service import (
     update_asn_profile
-)
-
-from services.graph_service import (
-    update_graph,
-    get_graph_risk_score
-)
-
-from services.velocity_service import (
-    update_velocity,
-    detect_velocity_cluster
-)
-
-from services.ato_service import (
-    update_account_behavior,
-    detect_account_takeover
 )
 
 from services.reputation_service import (
@@ -48,17 +33,10 @@ from case_management.case_service import (
         create_case
     )
 
-from threat_intelligence.threat_feed_service import (
-    evaluate_threat_intelligence
-)
-
 from threat_intelligence.update_threat_intelligence import (
     update_threat_intelligence
 )
 
-from trust_engine.trust_service import (
-    evaluate_trust
-)
 
 from trust_engine.trust_updater import (
     update_entity_trust
@@ -81,106 +59,36 @@ def process_transaction(event: dict):
 
     customer_id = event["customer_id"]
 
-    # ======================================
-    # GRAPH
-    # ======================================
-    update_graph(event)
+    infra = evaluate_infrastructure(event)
 
-    graph_result = get_graph_risk_score(event)
+    graph_score = infra["graph_score"]
+    graph_signals = infra["graph_signals"]
+    graph_clusters = infra["graph_clusters"]
+    community = infra["community"]
 
-    graph_score = graph_result.get("score", 0)
-    graph_signals = graph_result.get("signals", [])
-    graph_clusters = graph_result.get("clusters", [])
-    graph_community = graph_result.get("community")
+    velocity_score = infra["velocity_score"]
+    velocity_clusters = infra["velocity_clusters"]
 
-    # ======================================
-    # VELOCITY
-    # ======================================
-    update_velocity(event)
-    velocity_clusters = detect_velocity_cluster(event)
-    velocity_score = len(velocity_clusters) * 15
+    ato_score = infra["ato_score"]
+    ato_findings = infra["ato_findings"]
 
-    # ======================================
-    # ATO
-    # ======================================
-    update_account_behavior(event)
-    ato_findings = detect_account_takeover(event)
+    geo_score = infra["geo_score"]
+    geo_signals = infra["geo_signals"]
+    geo_profile = infra["geo_profile"]
 
-    ato_score = 0
-    for item in ato_findings:
-        if item["type"] == "ACCOUNT_TAKEOVER_RISK":
-            ato_score += 35
-        else:
-            ato_score += 15
+    asn_score = infra["asn_score"]
+    asn_signals = infra["asn_signals"]
+    asn_profile = infra["asn_profile"]
 
-    # ======================================
-    # GEO RISK LAYER
-    # ======================================
-    geo_result = evaluate_geo_risk(event)
+    threat_score = infra["threat_score"]
+    threat_signals = infra["threat_signals"]
+    threat_profile = infra["threat_profile"]
 
-    geo_score = geo_result.get("score", 0)
-    geo_signals = geo_result.get("signals", [])
-    geo_profile = geo_result.get("profile", {})
+    trust_score = infra["trust_score"]
+    trust_signals = infra["trust_signals"]
+    trust_result = infra["trust_profile"]
 
-    # ======================================
-    # ASN RISK LAYER
-    # ======================================
-    asn_result = evaluate_asn_risk(
-        event.get("ip_address")
-    )
-
-    asn_score = asn_result.get(
-        "score",
-        0
-    )
-
-    asn_signals = asn_result.get(
-        "signals",
-        []
-    )
-
-    asn_profile = asn_result.get(
-        "profile",
-        {}
-    )
-
-    # ======================================
-    # THREAT INTELLIGENCE
-    # ======================================
-    threat_result = (
-        evaluate_threat_intelligence(
-            event
-        )
-    )
-
-    threat_score = threat_result.get(
-        "score",
-        0
-    )
-
-    threat_signals = threat_result.get(
-        "signals",
-        []
-    )
-
-    threat_profile = threat_result.get(
-        "profile",
-        {}
-    )
-
-    trust_result = (
-        evaluate_trust(
-            event
-        )
-    )
-
-    trust_score = (
-        trust_result["score"]
-    )
-
-    trust_signals = (
-        trust_result["signals"]
-    )
+    infra_score = infra["infrastructure_score"]
 
 
     # ======================================
@@ -217,14 +125,12 @@ def process_transaction(event: dict):
     # ======================================
     # BASE MODEL
     # ======================================
-    infra_score = (graph_score + velocity_score + ato_score + geo_score + asn_score
-                   + threat_score + trust_score)
 
     score, category, confidence_score, confidence_level = calculate_risk(
         signals=signals,
         honeypot=honeypot,
         event=event,
-        graph_signal=infra_score
+        infrastructure_score=infra_score
     )
 
 
@@ -392,7 +298,7 @@ def process_transaction(event: dict):
         "graph_score": graph_score,
         "graph_signals": graph_signals,
         "graph_clusters": graph_clusters,
-        "graph_community": graph_community,
+        "graph_community": community,
 
         "velocity_score": velocity_score,
         "velocity_clusters": velocity_clusters,
