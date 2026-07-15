@@ -151,6 +151,81 @@ def emit_alert(result: dict, event: dict):
             })
         )
 
+    merchant_signals = result.get(
+        "merchant_signals",
+        []
+    )
+
+    if merchant_signals:
+        logger.critical(
+
+            json.dumps({
+
+                "type":
+                    "MERCHANT_RISK_DETECTED",
+
+                "signals":
+                    merchant_signals,
+
+                "merchant_profile":
+                    result.get(
+                        "merchant_profile"
+                    )
+
+            })
+
+        )
+
+    threat_signals = result.get(
+        "threat_signals",
+        []
+    )
+
+    if threat_signals:
+        logger.critical(
+
+            json.dumps({
+
+                "type":
+                    "THREAT_INTELLIGENCE",
+
+                "signals":
+                    threat_signals,
+
+                "threat_profile":
+                    result.get(
+                        "threat_profile"
+                    )
+
+            })
+
+        )
+
+    trust_signals = result.get(
+        "trust_signals",
+        []
+    )
+
+    if trust_signals:
+        logger.critical(
+
+            json.dumps({
+
+                "type":
+                    "TRUST_NETWORK",
+
+                "signals":
+                    trust_signals,
+
+                "trust_profile":
+                    result.get(
+                        "trust_profile"
+                    )
+
+            })
+
+        )
+
     # ======================================
     # VELOCITY ALERTS
     # ======================================

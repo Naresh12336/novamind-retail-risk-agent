@@ -1,8 +1,11 @@
 import json
-import pandas as pd
 from pathlib import Path
 
-from ml.feature_builder import build_feature_vector
+import pandas as pd
+
+from ml.feature_builder import (
+    build_feature_vector
+)
 
 # ==========================================
 # PATHS
@@ -19,152 +22,266 @@ OUTPUT_FILE = (
 
 
 # ==========================================
-# BUILD DATASET
+# MAIN
 # ==========================================
 def generate_dataset():
 
     if not LOG_FILE.exists():
-        print("decision_history.jsonl not found")
+
+        print(
+            "decision_history.jsonl not found."
+        )
+
         return
 
     rows = []
 
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
+    with open(
+        LOG_FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
 
         for line in f:
 
             try:
+
                 record = json.loads(line)
 
                 # ----------------------------------
-                # RECONSTRUCT RESULT OBJECT
+                # EVENT
                 # ----------------------------------
-                result = {
+                event = {
 
-                    "risk_score": record.get(
-                        "risk_score",
-                        0
-                    ),
+                    "amount":
+                        record.get(
+                            "amount",
+                            0
+                        ),
 
-                    "risk_category": record.get(
-                        "risk_category"
-                    ),
+                    "refund_count_last_30_days":
+                        record.get(
+                            "refund_count_last_30_days",
+                            0
+                        ),
 
-                    "recommended_action": record.get(
-                        "action"
-                    ),
+                    "account_age_days":
+                        record.get(
+                            "account_age_days",
+                            0
+                        )
+                }
 
-                    "graph_score": record.get(
-                        "graph_score",
-                        0
-                    ),
+                # ----------------------------------
+                # RESULT
+                # ----------------------------------
+                partial_result = {
 
-                    "velocity_score": record.get(
-                        "velocity_score",
-                        0
-                    ),
+                    # Risk
+                    "risk_score":
+                        record.get(
+                            "risk_score",
+                            0
+                        ),
 
-                    "ato_score": record.get(
-                        "ato_score",
-                        0
-                    ),
+                    "risk_category":
+                        record.get(
+                            "risk_category"
+                        ),
 
-                    "geo_score": record.get(
-                        "geo_score",
-                        0
-                    ),
+                    "recommended_action":
+                        record.get(
+                            "action"
+                        ),
 
-                    "asn_score": record.get(
-                        "asn_score",
-                        0
-                    ),
+                    # Infrastructure Scores
+                    "graph_score":
+                        record.get(
+                            "graph_score",
+                            0
+                        ),
 
-                    "graph_signals": record.get(
-                        "graph_signals",
-                        []
-                    ),
+                    "velocity_score":
+                        record.get(
+                            "velocity_score",
+                            0
+                        ),
 
-                    "velocity_clusters": record.get(
-                        "velocity_clusters",
-                        []
-                    ),
+                    "ato_score":
+                        record.get(
+                            "ato_score",
+                            0
+                        ),
 
-                    "ato_findings": record.get(
-                        "ato_findings",
-                        []
-                    ),
+                    "geo_score":
+                        record.get(
+                            "geo_score",
+                            0
+                        ),
 
-                    "geo_signals": record.get(
-                        "geo_signals",
-                        []
-                    ),
+                    "asn_score":
+                        record.get(
+                            "asn_score",
+                            0
+                        ),
 
-                    "asn_signals": record.get(
-                        "asn_signals",
-                        []
-                    ),
+                    "threat_score":
+                        record.get(
+                            "threat_score",
+                            0
+                        ),
 
-                    "reputation_before": record.get(
-                        "reputation_before",
-                        50
-                    ),
+                    "trust_score":
+                        record.get(
+                            "trust_score",
+                            0
+                        ),
 
+                    "merchant_score":
+                        record.get(
+                            "merchant_score",
+                            0
+                        ),
+
+                    # Signals
+                    "graph_signals":
+                        record.get(
+                            "graph_signals",
+                            []
+                        ),
+
+                    "velocity_clusters":
+                        record.get(
+                            "velocity_clusters",
+                            []
+                        ),
+
+                    "ato_findings":
+                        record.get(
+                            "ato_findings",
+                            []
+                        ),
+
+                    "geo_signals":
+                        record.get(
+                            "geo_signals",
+                            []
+                        ),
+
+                    "asn_signals":
+                        record.get(
+                            "asn_signals",
+                            []
+                        ),
+
+                    "threat_signals":
+                        record.get(
+                            "threat_signals",
+                            []
+                        ),
+
+                    "trust_signals":
+                        record.get(
+                            "trust_signals",
+                            []
+                        ),
+
+                    "merchant_signals":
+                        record.get(
+                            "merchant_signals",
+                            []
+                        ),
+
+                    # Reputation
+                    "reputation_before":
+                        record.get(
+                            "reputation_before",
+                            50
+                        ),
+
+                    # Evidence
                     "evidence": {
+
                         "textual_signals": {
-                            "keyword_count": record.get(
-                                "keyword_count",
-                                0
-                            ),
 
-                            "urgency_flag": record.get(
-                                "urgency_flag",
-                                False
-                            ),
+                            "keyword_count":
+                                record.get(
+                                    "keyword_count",
+                                    0
+                                ),
 
-                            "text_length": record.get(
-                                "text_length",
-                                0
-                            )
+                            "urgency_flag":
+                                record.get(
+                                    "urgency_flag",
+                                    False
+                                ),
+
+                            "text_length":
+                                record.get(
+                                    "text_length",
+                                    0
+                                )
+
                         },
 
                         "behavioral_signals": {
-                            "amount": record.get(
-                                "amount",
-                                0
-                            ),
 
-                            "refund_count_last_30_days": record.get(
-                                "refund_count_last_30_days",
-                                0
-                            ),
+                            "amount":
+                                record.get(
+                                    "amount",
+                                    0
+                                ),
 
-                            "account_age_days": record.get(
-                                "account_age_days",
-                                0
-                            )
+                            "refund_count_last_30_days":
+                                record.get(
+                                    "refund_count_last_30_days",
+                                    0
+                                ),
+
+                            "account_age_days":
+                                record.get(
+                                    "account_age_days",
+                                    0
+                                )
+
                         },
 
                         "honeypot_signals": {
-                            "tactic_count": record.get(
-                                "tactic_count",
-                                0
-                            )
+
+                            "tactic_count":
+                                record.get(
+                                    "tactic_count",
+                                    0
+                                )
+
                         }
+
                     }
+
                 }
 
                 features = build_feature_vector(
-                    event={},
-                    result=result
+                    event=event,
+                    partial_result= partial_result,
                 )
 
-                rows.append(features)
+                rows.append(
+                    features
+                )
 
             except Exception as e:
-                print("DATASET ERROR:", str(e))
+
+                print(
+                    "DATASET ERROR:",
+                    str(e)
+                )
 
     if not rows:
-        print("No rows generated")
+
+        print(
+            "No dataset rows generated."
+        )
+
         return
 
     df = pd.DataFrame(rows)
@@ -183,11 +300,34 @@ def generate_dataset():
         f"Dataset generated: {OUTPUT_FILE}"
     )
 
-    print(df.head())
+    print(
+        "\nDataset Shape:"
+    )
+
+    print(
+        df.shape
+    )
+
+    print(
+        "\nColumns:"
+    )
+
+    print(
+        list(df.columns)
+    )
+
+    print(
+        "\nPreview:"
+    )
+
+    print(
+        df.head()
+    )
 
 
 # ==========================================
 # ENTRYPOINT
 # ==========================================
 if __name__ == "__main__":
+
     generate_dataset()

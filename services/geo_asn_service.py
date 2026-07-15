@@ -81,7 +81,7 @@ def evaluate_asn_risk(ip_address: str):
         )
 
         # deduplicate
-        signals = list(set(signals))
+        signals = list(dict.fromkeys(signals))
 
         return {
             "score": score,

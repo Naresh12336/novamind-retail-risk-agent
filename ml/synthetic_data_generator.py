@@ -30,6 +30,43 @@ SHARED_BROWSERS = [
     "SHARED_BR_2"
 ]
 
+# ==========================================
+# CUSTOMER POOL
+# ==========================================
+CUSTOMER_POOL_SIZE = 1000
+
+CUSTOMERS = [
+
+    f"CUST_{i}"
+
+    for i in range(
+        1000,
+        1000 + CUSTOMER_POOL_SIZE
+    )
+
+]
+
+# ==========================================
+# MERCHANT NETWORK
+# ==========================================
+MERCHANTS = [
+    "MERCHANT_AMAZON",
+    "MERCHANT_FLIPKART",
+    "MERCHANT_MYNTRA",
+    "MERCHANT_CROMA",
+    "MERCHANT_RELIANCE",
+    "MERCHANT_NYKAA",
+    "MERCHANT_BIGBASKET",
+    "MERCHANT_ZEPTO",
+    "MERCHANT_SWIGGY",
+    "MERCHANT_ZOMATO"
+]
+
+HIGH_RISK_MERCHANTS = [
+    "MERCHANT_UNKNOWN_1",
+    "MERCHANT_UNKNOWN_2",
+    "MERCHANT_UNKNOWN_3"
+]
 
 # ==========================================
 # CUSTOMER MEMORY
@@ -52,29 +89,41 @@ def stable_or_rotate(base, stability):
 # MAIN GENERATOR
 # ==========================================
 def generate_transaction(index):
-
-    customer_id = (
-        f"CUST_{random.randint(1000,9999)}"
-    )
+    customer_id = random.choice(CUSTOMERS)
 
     # --------------------------------------
     # PERSIST PERSONA
     # --------------------------------------
     if customer_id not in customer_memory:
+        persona = generate_persona(customer_id)
 
-        customer_memory[customer_id] = generate_persona(
-            customer_id
-        )
+        persona["preferred_merchant"] = random.choice(MERCHANTS)
+
+        customer_memory[customer_id] = persona
 
     persona = customer_memory[customer_id]
 
     # --------------------------------------
     # FRAUD DECISION
     # --------------------------------------
-    fraud = (
-        random.random()
-        < persona["fraud_probability"]
-    )
+    fraud = (random.random()< persona["fraud_probability"])
+
+    # --------------------------------------
+    # MERCHANT
+    # --------------------------------------
+    merchant_id = persona["preferred_merchant"]
+
+    # Fraudsters occasionally migrate
+    # to risky merchants.
+    if fraud and random.random() < 0.35:
+
+        merchant_id = random.choice(HIGH_RISK_MERCHANTS)
+
+    # Legitimate customers occasionally
+    # shop elsewhere.
+    elif random.random() < 0.15:
+
+        merchant_id = random.choice(MERCHANTS)
 
     # --------------------------------------
     # GEO / IP
@@ -86,8 +135,7 @@ def generate_transaction(index):
     # --------------------------------------
     # DEVICE STABILITY
     # --------------------------------------
-    base_device = (
-        f"DEV_{customer_id}"
+    base_device = (f"DEV_{customer_id}"
     )
 
     device_id = stable_or_rotate(
@@ -188,6 +236,8 @@ def generate_transaction(index):
         "transaction_id": f"SYN_{index}",
 
         "customer_id": customer_id,
+
+        "merchant_id": merchant_id,
 
         "transaction_type": tx_type,
 

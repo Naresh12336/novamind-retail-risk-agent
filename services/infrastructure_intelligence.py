@@ -35,6 +35,10 @@ from config.fraud_policy import (
     ATO_MEDIUM_SCORE
 )
 
+from merchant_intelligence.merchant_reputation_service import (
+    evaluate_merchant_risk
+)
+
 
 # ==========================================
 # INFRASTRUCTURE INTELLIGENCE
@@ -100,7 +104,7 @@ def evaluate_infrastructure(event: dict):
     # --------------------------------------
     # ASN
     # --------------------------------------
-    asn_result = evaluate_asn_risk(event)
+    asn_result = evaluate_asn_risk(event.get("ip_address"))
 
     asn_score = asn_result["score"]
 
@@ -129,25 +133,23 @@ def evaluate_infrastructure(event: dict):
     trust_signals = trust_result["signals"]
 
     # --------------------------------------
+    # MERCHANT
+    # --------------------------------------
+    merchant_result = evaluate_merchant_risk(
+        event.get("merchant_id")
+    )
+
+    merchant_score = merchant_result["score"]
+
+    merchant_signals = merchant_result["signals"]
+
+    merchant_profile = merchant_result["profile"]
+
+    # --------------------------------------
     # INFRASTRUCTURE SCORE
     # --------------------------------------
-    infrastructure_score = (
-
-        graph_score
-
-        + velocity_score
-
-        + ato_score
-
-        + geo_score
-
-        + asn_score
-
-        + threat_score
-
-        + trust_score
-
-    )
+    infrastructure_score = (graph_score + velocity_score + ato_score + geo_score + asn_score
+                            + threat_score + trust_score + merchant_score)
 
     # --------------------------------------
     # RETURN
@@ -187,6 +189,11 @@ def evaluate_infrastructure(event: dict):
         "trust_score": trust_score,
         "trust_signals": trust_signals,
         "trust_profile": trust_result,
+
+        # Merchant
+        "merchant_score": merchant_score,
+        "merchant_signals": merchant_signals,
+        "merchant_profile": merchant_profile,
 
         # Aggregate
         "infrastructure_score": infrastructure_score

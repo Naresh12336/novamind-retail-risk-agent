@@ -3,10 +3,6 @@ import pandas as pd
 
 from pathlib import Path
 
-from ml.feature_builder import (
-    build_feature_vector
-)
-
 # ==========================================
 # LOAD MODEL
 # ==========================================
@@ -19,67 +15,75 @@ MODEL_PATH = (
 model = joblib.load(MODEL_PATH)
 
 # ==========================================
-# DROPPED TRAINING COLUMNS
+# TRAINING LABELS
 # ==========================================
 DROP_COLUMNS = [
+
     "was_blocked",
+
     "is_high_risk",
 
-    "risk_score",
-    "graph_score",
-    "velocity_score",
-    "ato_score",
-    "geo_score",
-    "asn_score"
+    "risk_score"
 ]
 
 # ==========================================
 # MAIN INFERENCE
 # ==========================================
 def predict_fraud_risk(
-    event: dict,
-    result: dict
+    features: dict
 ):
 
     try:
 
         # ----------------------------------
-        # BUILD FEATURES
+        # COPY FEATURE VECTOR
         # ----------------------------------
-        features = build_feature_vector(
-            event=event,
-            result=result
-        )
+        model_features = features.copy()
 
         # ----------------------------------
         # REMOVE TRAINING LABELS
         # ----------------------------------
-        for col in DROP_COLUMNS:
-            features.pop(col, None)
+        for column in DROP_COLUMNS:
+
+            model_features.pop(
+                column,
+                None
+            )
 
         # ----------------------------------
         # DATAFRAME
         # ----------------------------------
-        X = pd.DataFrame([features])
+        x = pd.DataFrame(
+            [model_features]
+        )
 
         # ----------------------------------
         # PREDICTION
         # ----------------------------------
-        prediction = model.predict(X)[0]
+        prediction = model.predict(
+            x
+        )[0]
 
-        probability = (
-            model.predict_proba(X)[0][1]
-        )
+        probability = model.predict_proba(
+            x
+        )[0][1]
 
+        # ----------------------------------
+        # RESULT
+        # ----------------------------------
         return {
-            "prediction": int(prediction),
+
+            "prediction": int(
+                prediction
+            ),
 
             "fraud_probability": round(
                 float(probability),
                 4
             ),
 
-            "features": features
+            "features": model_features
+
         }
 
     except Exception as e:
@@ -90,7 +94,11 @@ def predict_fraud_risk(
         )
 
         return {
+
             "prediction": 0,
+
             "fraud_probability": 0.0,
+
             "features": {}
+
         }

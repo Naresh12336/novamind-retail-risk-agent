@@ -6,6 +6,7 @@ from engine.reasoning import generate_reasoning
 from alerts.alert_service import emit_alert
 from analytics.decision_logger import log_decision
 from engine.contribution import derive_contribution
+from ml.feature_builder import build_feature_vector
 
 from services.infrastructure_intelligence import (
     evaluate_infrastructure
@@ -44,6 +45,14 @@ from trust_engine.trust_updater import (
 
 from engine.ml_decision_policy import (
     apply_ml_policy
+)
+
+from merchant_intelligence.merchant_updater import (
+    update_merchant_profile
+)
+
+from ml.dataset_writer import (
+    append_training_sample
 )
 
 import uuid
@@ -87,6 +96,10 @@ def process_transaction(event: dict):
     trust_score = infra["trust_score"]
     trust_signals = infra["trust_signals"]
     trust_result = infra["trust_profile"]
+
+    merchant_score = infra["merchant_score"]
+    merchant_signals = infra["merchant_signals"]
+    merchant_profile = infra["merchant_profile"]
 
     infra_score = infra["infrastructure_score"]
 
@@ -161,44 +174,36 @@ def process_transaction(event: dict):
     partial_result = {
 
         "risk_score": score,
-
         "risk_category": category,
-
         "graph_score": graph_score,
         "velocity_score": velocity_score,
         "ato_score": ato_score,
         "geo_score": geo_score,
         "asn_score": asn_score,
-
         "graph_signals": graph_signals,
-
         "velocity_clusters": velocity_clusters,
-
         "ato_findings": ato_findings,
-
         "geo_signals": geo_signals,
-
         "asn_signals": asn_signals,
-
         "threat_score": threat_score,
-
         "threat_signals": threat_signals,
-
         "trust_score": trust_score,
-
         "trust_signals": trust_signals,
-
+        "merchant_score": merchant_score,
+        "merchant_signals": merchant_signals,
         "reputation_before": reputation_before,
-
         "evidence": evidence,
-
         "infrastructure_score": infra_score,
 
     }
 
+    features = build_feature_vector(
+        event=event,
+        partial_result=partial_result
+    )
+
     ml_result = predict_fraud_risk(
-        event,
-        partial_result
+        features
     )
 
     ml_prediction = ml_result.get(
@@ -268,6 +273,9 @@ def process_transaction(event: dict):
     print("TRUST SCORE:", trust_score)
     print("TRUST SIGNALS:", trust_signals)
     print("TRUST PROFILE:", trust_result)
+    print("MERCHANT SCORE:", merchant_score)
+    print("MERCHANT SIGNALS:", merchant_signals)
+    print("MERCHANT PROFILE:", merchant_profile)
     print("ML PREDICTION:", ml_prediction)
     print("ML FRAUD PROBABILITY:", ml_probability)
     print("ML TOP CONTRIBUTORS:", top_ml_contributors)
@@ -322,6 +330,10 @@ def process_transaction(event: dict):
         "trust_signals": trust_signals,
         "trust_profile": trust_result,
 
+        "merchant_score": merchant_score,
+        "merchant_signals": merchant_signals,
+        "merchant_profile": merchant_profile,
+
         "evidence": evidence,
 
         "contribution": contribution,
@@ -367,6 +379,8 @@ def process_transaction(event: dict):
 
     update_entity_trust(event,result)
 
+    update_merchant_profile(event,result)
+
     # ======================================
     # UPDATE CUSTOMER REPUTATION
     # ======================================
@@ -375,6 +389,8 @@ def process_transaction(event: dict):
     print("FINAL DECISION:", result["recommended_action"])
     print("REPUTATION BEFORE:", reputation_before)
     print("REPUTATION ADJUSTMENT:", rep_adjustment)
+
+    append_training_sample(features)
 
     # ======================================
     # LOG DECISION
