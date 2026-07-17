@@ -134,7 +134,19 @@ def build_feature_vector(
 
         "merchant_score":
             partial_result.get(
-                "merchant_score",
+            "merchant_score",
+                0
+            ),
+
+        "infrastructure_score":
+             partial_result.get(
+            "infrastructure_score",
+                0
+            ),
+
+        "raw_infrastructure_score":
+            partial_result.get(
+            "raw_infrastructure_score",
                 0
             ),
 

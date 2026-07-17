@@ -29,31 +29,70 @@ from trust_engine.trust_service import (
     evaluate_trust
 )
 
+from merchant_intelligence.merchant_reputation_service import (
+    evaluate_merchant_risk
+)
+
 from config.fraud_policy import (
     VELOCITY_CLUSTER_SCORE,
     ATO_HIGH_SCORE,
     ATO_MEDIUM_SCORE
 )
 
-from merchant_intelligence.merchant_reputation_service import (
-    evaluate_merchant_risk
-)
+# ==========================================
+# CONFIG
+# ==========================================
+MAX_INFRASTRUCTURE_SCORE = 250
+
+RULE_ENGINE_INFRA_CAP = 40
+
+
+# ==========================================
+# NORMALIZER
+# ==========================================
+def normalize_infrastructure_score(
+    raw_score: int
+):
+
+    if raw_score <= 0:
+        return 0
+
+    normalized = round(
+
+        min(
+
+            (
+                raw_score
+                / MAX_INFRASTRUCTURE_SCORE
+            )
+            * RULE_ENGINE_INFRA_CAP,
+
+            RULE_ENGINE_INFRA_CAP
+
+        )
+
+    )
+
+    return normalized
 
 
 # ==========================================
 # INFRASTRUCTURE INTELLIGENCE
 # ==========================================
-def evaluate_infrastructure(event: dict):
+def evaluate_infrastructure(
+    event: dict
+):
 
     # --------------------------------------
     # GRAPH
     # --------------------------------------
     update_graph(event)
 
-    graph_result = get_graph_risk_score(event)
+    graph_result = get_graph_risk_score(
+        event
+    )
 
     graph_score = graph_result["score"]
-
     graph_signals = graph_result["signals"]
 
     # --------------------------------------
@@ -61,11 +100,15 @@ def evaluate_infrastructure(event: dict):
     # --------------------------------------
     update_velocity(event)
 
-    velocity_clusters = detect_velocity_cluster(event)
+    velocity_clusters = detect_velocity_cluster(
+        event
+    )
 
     velocity_score = (
 
-        len(velocity_clusters)
+        len(
+            velocity_clusters
+        )
 
         * VELOCITY_CLUSTER_SCORE
 
@@ -76,7 +119,9 @@ def evaluate_infrastructure(event: dict):
     # --------------------------------------
     update_account_behavior(event)
 
-    ato_findings = detect_account_takeover(event)
+    ato_findings = detect_account_takeover(
+        event
+    )
 
     ato_score = 0
 
@@ -93,43 +138,44 @@ def evaluate_infrastructure(event: dict):
     # --------------------------------------
     # GEO
     # --------------------------------------
-    geo_result = evaluate_geo_risk(event)
+    geo_result = evaluate_geo_risk(
+        event
+    )
 
     geo_score = geo_result["score"]
-
     geo_signals = geo_result["signals"]
-
     geo_profile = geo_result["profile"]
 
     # --------------------------------------
     # ASN
     # --------------------------------------
-    asn_result = evaluate_asn_risk(event.get("ip_address"))
+    asn_result = evaluate_asn_risk(
+        event.get("ip_address")
+    )
 
     asn_score = asn_result["score"]
-
     asn_signals = asn_result["signals"]
-
     asn_profile = asn_result["profile"]
 
     # --------------------------------------
     # THREAT
     # --------------------------------------
-    threat_result = evaluate_threat_intelligence(event)
+    threat_result = evaluate_threat_intelligence(
+        event
+    )
 
     threat_score = threat_result["score"]
-
     threat_signals = threat_result["signals"]
-
     threat_profile = threat_result["profile"]
 
     # --------------------------------------
     # TRUST
     # --------------------------------------
-    trust_result = evaluate_trust(event)
+    trust_result = evaluate_trust(
+        event
+    )
 
     trust_score = trust_result["score"]
-
     trust_signals = trust_result["signals"]
 
     # --------------------------------------
@@ -140,61 +186,77 @@ def evaluate_infrastructure(event: dict):
     )
 
     merchant_score = merchant_result["score"]
-
     merchant_signals = merchant_result["signals"]
-
     merchant_profile = merchant_result["profile"]
 
     # --------------------------------------
-    # INFRASTRUCTURE SCORE
+    # RAW SCORE
     # --------------------------------------
-    infrastructure_score = (graph_score + velocity_score + ato_score + geo_score + asn_score
-                            + threat_score + trust_score + merchant_score)
+    raw_infrastructure_score = (
+
+        graph_score
+
+        + velocity_score
+
+        + ato_score
+
+        + geo_score
+
+        + asn_score
+
+        + threat_score
+
+        + trust_score
+
+        + merchant_score
+
+    )
+
+    # --------------------------------------
+    # NORMALIZED SCORE
+    # --------------------------------------
+    infrastructure_score = normalize_infrastructure_score(
+        raw_infrastructure_score
+    )
 
     # --------------------------------------
     # RETURN
     # --------------------------------------
     return {
 
-        # Graph
         "graph_score": graph_score,
         "graph_signals": graph_signals,
         "graph_clusters": graph_result["clusters"],
         "community": graph_result["community"],
 
-        # Velocity
         "velocity_score": velocity_score,
         "velocity_clusters": velocity_clusters,
 
-        # ATO
         "ato_score": ato_score,
         "ato_findings": ato_findings,
 
-        # Geo
         "geo_score": geo_score,
         "geo_signals": geo_signals,
         "geo_profile": geo_profile,
 
-        # ASN
         "asn_score": asn_score,
         "asn_signals": asn_signals,
         "asn_profile": asn_profile,
 
-        # Threat
         "threat_score": threat_score,
         "threat_signals": threat_signals,
         "threat_profile": threat_profile,
 
-        # Trust
         "trust_score": trust_score,
         "trust_signals": trust_signals,
         "trust_profile": trust_result,
 
-        # Merchant
         "merchant_score": merchant_score,
         "merchant_signals": merchant_signals,
         "merchant_profile": merchant_profile,
 
-        # Aggregate
+        "raw_infrastructure_score": raw_infrastructure_score,
+
         "infrastructure_score": infrastructure_score
+
     }

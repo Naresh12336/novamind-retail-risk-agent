@@ -12,7 +12,33 @@ MODEL_PATH = (
     BASE_DIR / "ml" / "xgboost_fraud_model.pkl"
 )
 
-model = joblib.load(MODEL_PATH)
+model = None
+
+if MODEL_PATH.exists():
+
+    try:
+
+        model = joblib.load(
+            MODEL_PATH
+        )
+
+        print(
+            "ML model loaded."
+        )
+
+    except Exception as e:
+
+        print(
+            "Failed to load ML model:",
+            str(e)
+        )
+
+else:
+
+    print(
+        "ML model not found. Running in rule-only mode."
+    )
+
 
 # ==========================================
 # TRAINING LABELS
@@ -26,6 +52,7 @@ DROP_COLUMNS = [
     "risk_score"
 ]
 
+
 # ==========================================
 # MAIN INFERENCE
 # ==========================================
@@ -33,10 +60,22 @@ def predict_fraud_risk(
     features: dict
 ):
 
+    if model is None:
+
+        return {
+
+            "prediction": 0,
+
+            "fraud_probability": 0.0,
+
+            "features": features
+
+        }
+
     try:
 
         # ----------------------------------
-        # COPY FEATURE VECTOR
+        # COPY FEATURES
         # ----------------------------------
         model_features = features.copy()
 
@@ -99,6 +138,6 @@ def predict_fraud_risk(
 
             "fraud_probability": 0.0,
 
-            "features": {}
+            "features": features
 
         }

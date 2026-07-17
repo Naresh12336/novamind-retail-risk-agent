@@ -50,6 +50,15 @@ PERSONA_TYPES = [
     "account_takeover"
 ]
 
+# Relative occurrence of each persona
+PERSONA_WEIGHTS = [
+    50,   # legit_user
+    20,   # casual_risky
+    15,   # refund_abuser
+    10,   # fraud_ring
+    5     # account_takeover
+]
+
 
 # ==========================================
 # HELPERS
@@ -100,9 +109,11 @@ def select_ip(region):
 # ==========================================
 def generate_persona(customer_id):
 
-    persona = random.choice(
-        PERSONA_TYPES
-    )
+    persona = random.choices(
+        PERSONA_TYPES,
+        weights=PERSONA_WEIGHTS,
+        k=1
+    )[0]
 
     # --------------------------------------
     # LEGIT USER
@@ -152,7 +163,7 @@ def generate_persona(customer_id):
 
             "device_stability": 0.70,
 
-            "fraud_probability": 0.20,
+            "fraud_probability": 0.10,
 
             "refund_behavior": "medium",
 
@@ -177,7 +188,7 @@ def generate_persona(customer_id):
 
             "device_stability": 0.50,
 
-            "fraud_probability": 0.75,
+            "fraud_probability": 0.45,
 
             "refund_behavior": "high",
 
@@ -202,7 +213,7 @@ def generate_persona(customer_id):
 
             "device_stability": 0.20,
 
-            "fraud_probability": 0.95,
+            "fraud_probability": 0.75,
 
             "refund_behavior": "extreme",
 
@@ -225,7 +236,7 @@ def generate_persona(customer_id):
 
         "device_stability": 0.10,
 
-        "fraud_probability": 0.85,
+        "fraud_probability": 0.60,
 
         "refund_behavior": "medium",
 

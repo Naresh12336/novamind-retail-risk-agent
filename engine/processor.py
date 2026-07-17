@@ -102,6 +102,7 @@ def process_transaction(event: dict):
     merchant_profile = infra["merchant_profile"]
 
     infra_score = infra["infrastructure_score"]
+    raw_infrastructure_score = infra["raw_infrastructure_score"]
 
 
     # ======================================
@@ -194,6 +195,7 @@ def process_transaction(event: dict):
         "reputation_before": reputation_before,
         "evidence": evidence,
         "infrastructure_score": infra_score,
+        "raw_infrastructure_score":raw_infrastructure_score,
 
     }
 
@@ -342,7 +344,9 @@ def process_transaction(event: dict):
         "ml_probability": ml_probability,
         "ml_explanation": top_ml_contributors,
         "ml_result": ml_result,
+
         "infrastructure_score": infra_score,
+        "raw_infrastructure_score":raw_infrastructure_score,
     }
 
     result = apply_ml_policy(result)
@@ -364,40 +368,87 @@ def process_transaction(event: dict):
     # ======================================
     # UPDATE ASN REPUTATION
     # ======================================
-    update_asn_profile(
-        asn_number=asn_profile.get("asn"),
-        result=result,
-        geo_signals=geo_signals,
-        graph_signals=graph_signals,
-        ato_findings=ato_findings
-    )
+    try:
+        update_asn_profile(
+            asn_number=asn_profile.get("asn"),
+            result=result,
+            geo_signals=geo_signals,
+            graph_signals=graph_signals,
+            ato_findings=ato_findings
+        )
+
+    except Exception as e:
+        print("ASN UPDATE ERROR:",str(e))
+
+
 
     # ======================================
     # UPDATE THREAT INTELLIGENCE
     # ======================================
-    update_threat_intelligence(event,result)
 
-    update_entity_trust(event,result)
+    try:
+        update_threat_intelligence(event,result)
 
-    update_merchant_profile(event,result)
+    except Exception as e:
+        print("THREAT UPDATE ERROR:",str(e))
+
+
+    try:
+        update_entity_trust(
+            event,
+            result
+        )
+    except Exception as e:
+        print(
+            "TRUST UPDATE ERROR:",
+            str(e)
+        )
+
+
+    try:
+        update_merchant_profile(event, result)
+
+    except Exception as e:
+        print("MERCHANT UPDATE ERROR:", str(e))
 
     # ======================================
     # UPDATE CUSTOMER REPUTATION
     # ======================================
-    update_reputation(customer_id,result)
+
+    try:
+        update_reputation(customer_id,result)
+
+    except Exception as e:
+        print("REPUTATION UPDATE ERROR:", str(e))
 
     print("FINAL DECISION:", result["recommended_action"])
     print("REPUTATION BEFORE:", reputation_before)
     print("REPUTATION ADJUSTMENT:", rep_adjustment)
 
-    append_training_sample(features)
 
     # ======================================
     # LOG DECISION
     # ======================================
-    log_decision(event, result,signals,honeypot)
+    log_decision(event,result,signals,honeypot)
 
-    if final_action in ["Manual Review Required", "Auto Block Transaction"]:
-        emit_alert(result, event)
+    if final_action in [
+        "Manual Review Required",
+        "Auto Block Transaction"
+    ]:
+
+        try:
+
+            emit_alert(result,event)
+
+        except Exception as e:
+
+            print("ALERT ERROR:",str(e))
+
+    training_features = build_feature_vector(
+        event=event,
+        partial_result=result
+    )
+
+    append_training_sample(training_features)
 
     return result

@@ -47,7 +47,9 @@ def append_training_sample(
 
             "trust_score",
 
-            "merchant_score"
+            "merchant_score",
+
+            "raw_infrastructure_score"
 
         }
 
