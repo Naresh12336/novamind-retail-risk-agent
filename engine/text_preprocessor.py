@@ -24,10 +24,16 @@ from typing import List
 
 import spacy
 from spacy.language import Language
-from spacy.tokens import Doc
+from spacy.tokens import Doc, Token
 
 from engine.models.preprocessing_config import PREPROCESSING_CONFIG
-from engine.nlp_types import PreprocessedText
+from engine.nlp_types import (
+    DependencyRelation,
+    NamedEntity,
+    NegationMarker,
+    PreprocessedText,
+    TokenInfo,
+)
 from engine.nlp_utils import (
     normalize_text,
     validate_text,
@@ -56,7 +62,12 @@ class TextPreprocessor:
         model_name = self.config.spacy.model_name
 
         try:
-            return spacy.load(model_name)
+            return spacy.load(
+                model_name,
+                disable=list(
+                    self.config.spacy.disable_components
+                ),
+            )
 
         except OSError as exc:
             raise RuntimeError(
@@ -72,6 +83,9 @@ class TextPreprocessor:
 
         text = validate_text(text)
 
+        if self.config.normalization.strip_whitespace:
+            text = text.strip()
+
         if self.config.normalization.lowercase:
             text = text.lower()
 
@@ -79,6 +93,48 @@ class TextPreprocessor:
             text = normalize_text(text)
 
         return text
+
+    def _should_keep_token(
+            self,
+            token: Token,
+    ) -> bool:
+        """
+        Determine whether a token should be included in
+        linguistic analysis.
+        """
+
+        filter_config = self.config.token_filter
+
+        if token.is_space:
+            return False
+
+        if (
+                filter_config.remove_stopwords
+                and token.is_stop
+        ):
+            return False
+
+        if (
+                filter_config.remove_punctuation
+                and token.is_punct
+        ):
+            return False
+
+        if (
+                filter_config.remove_symbols
+                and token.is_currency
+        ):
+            return False
+
+        token_length = len(token.text)
+
+        if token_length < filter_config.minimum_token_length:
+            return False
+
+        if token_length > filter_config.maximum_token_length:
+            return False
+
+        return True
 
     @staticmethod
     def _extract_sentences(doc: Doc) -> List[str]:
@@ -92,53 +148,89 @@ class TextPreprocessor:
             if sentence.text.strip()
         ]
 
-    @staticmethod
-    def _extract_token_features(
+    def _extract_named_entities(
+            self,
             doc: Doc,
-    ) -> tuple[List[str], List[str], List[str]]:
+    ) -> List[NamedEntity]:
         """
-        Extract token texts, lemmas and POS tags in a single pass.
+        Extract named entities from a spaCy document.
+
+        Each entity contains its text, entity label,
+        character offsets, and token offsets.
         """
 
-        tokens: List[str] = []
-        lemmas: List[str] = []
-        pos_tags: List[str] = []
+        if not self.config.linguistic.extract_named_entities:
+            return []
+
+        entities: List[NamedEntity] = []
+
+        for entity in doc.ents:
+            entities.append(
+                NamedEntity(
+                    text=entity.text,
+                    label=entity.label_,
+                    start_char=entity.start_char,
+                    end_char=entity.end_char,
+                    start_token=entity.start,
+                    end_token=entity.end,
+                )
+            )
+
+        return entities
+
+    def _extract_tokens(
+            self,
+            doc: Doc,
+    ) -> List[TokenInfo]:
+        """
+        Extract structured token information from a spaCy document.
+
+        Each retained spaCy token is converted into a TokenInfo object
+        containing its text, lemma, and part-of-speech tag.
+        """
+
+        tokens: List[TokenInfo] = []
 
         for token in doc:
 
-            if token.is_space:
+            if not self._should_keep_token(token):
                 continue
 
-            tokens.append(token.text)
-            lemmas.append(token.lemma_)
-            pos_tags.append(token.pos_)
+            tokens.append(
+                TokenInfo(
+                    text=token.text,
+                    lemma=token.lemma_,
+                    pos=token.pos_,
+                )
+            )
 
-        return tokens, lemmas, pos_tags
+        return tokens
 
     @staticmethod
     def _build_preprocessed_text(
-        original_text: str,
-        clean_text: str,
-        tokens: List[str],
-        lemmas: List[str],
-        pos_tags: List[str],
-        sentences: List[str],
+            original_text: str,
+            clean_text: str,
+            tokens: List[TokenInfo],
+            sentences: List[str],
+            named_entities: List[NamedEntity],
     ) -> PreprocessedText:
         """
-        Build the final immutable PreprocessedText object.
+        Build the final PreprocessedText object from extracted
+        linguistic information.
         """
 
         return PreprocessedText(
             original_text=original_text,
             clean_text=clean_text,
             tokens=tokens,
-            lemmas=lemmas,
-            pos_tags=pos_tags,
             sentences=sentences,
+            named_entities=named_entities,
             token_count=len(tokens),
             sentence_count=len(sentences),
             character_count=len(clean_text),
-            unique_token_count=len(set(tokens)),
+            unique_token_count=len(
+                {token.text for token in tokens}
+            ),
         )
 
     def process(self, text: str) -> PreprocessedText:
@@ -164,13 +256,16 @@ class TextPreprocessor:
 
         sentences = self._extract_sentences(doc)
 
-        tokens, lemmas, pos_tags = self._extract_token_features(doc)
+        tokens = self._extract_tokens(doc)
+
+        ner_doc = self.nlp(original_text)
+
+        named_entities = self._extract_named_entities(ner_doc)
 
         return self._build_preprocessed_text(
             original_text=original_text,
             clean_text=clean_text,
             tokens=tokens,
-            lemmas=lemmas,
-            pos_tags=pos_tags,
             sentences=sentences,
+            named_entities=named_entities,
         )

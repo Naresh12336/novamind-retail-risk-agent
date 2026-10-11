@@ -8,9 +8,10 @@ TextPreprocessor. It intentionally contains no NLP logic.
 
 Responsibilities
 ----------------
-- spaCy model configuration
+- spaCy pipeline configuration
 - Text normalization settings
 - Token filtering rules
+- Linguistic feature extraction configuration
 - Pattern configuration
 - Language settings
 """
@@ -28,7 +29,7 @@ from typing import FrozenSet
 @dataclass(frozen=True, slots=True)
 class NormalizationConfig:
     """
-    Controls basic text normalization.
+    Controls input text normalization.
     """
 
     lowercase: bool = True
@@ -36,7 +37,7 @@ class NormalizationConfig:
     normalize_whitespace: bool = True
 
     preserve_numbers: bool = True
-    preserve_urls: bool = True
+    preserve_urls: bool =True
     preserve_emails: bool = True
 
     remove_html: bool = True
@@ -61,21 +62,51 @@ class TokenFilterConfig:
 
 
 # ==========================================================
+# LINGUISTIC FEATURE CONFIGURATION
+# ==========================================================
+
+@dataclass(frozen=True, slots=True)
+class LinguisticFeatureConfig:
+    """
+    Controls which linguistic annotations are extracted from
+    the spaCy document.
+
+    These are descriptive annotations rather than fraud
+    intelligence.
+    """
+
+    extract_tokens: bool = True
+
+    extract_lemmas: bool = True
+
+    extract_pos_tags: bool = True
+
+    extract_sentences: bool = True
+
+    extract_named_entities: bool = True
+
+    extract_dependencies: bool = True
+
+    extract_noun_chunks: bool = False
+
+    extract_negations: bool = True
+
+
+# ==========================================================
 # SPACY CONFIGURATION
 # ==========================================================
 
 @dataclass(frozen=True, slots=True)
 class SpacyConfig:
     """
-    Configuration for spaCy.
+    Configuration for the spaCy language pipeline.
     """
 
-    model_name: str = "en_core_web_sm"
+    model_name: str = "en_core_web_lg"
 
-    enable_sentence_segmentation: bool = True
-    enable_lemmatization: bool = True
-    enable_pos_tagging: bool = True
-    enable_named_entities: bool = False
+    disable_components: FrozenSet[str] = field(
+        default_factory=frozenset
+    )
 
 
 # ==========================================================
@@ -106,7 +137,7 @@ class PatternConfig:
 @dataclass(frozen=True, slots=True)
 class LanguageConfig:
     """
-    Language-specific preprocessing settings.
+    Language-specific preprocessing configuration.
     """
 
     language: str = "en"
@@ -125,7 +156,7 @@ class LanguageConfig:
 @dataclass(frozen=True, slots=True)
 class PreprocessingConfig:
     """
-    Master preprocessing configuration.
+    Master configuration for the preprocessing pipeline.
     """
 
     normalization: NormalizationConfig = field(
@@ -134,6 +165,10 @@ class PreprocessingConfig:
 
     token_filter: TokenFilterConfig = field(
         default_factory=TokenFilterConfig
+    )
+
+    linguistic: LinguisticFeatureConfig = field(
+        default_factory=LinguisticFeatureConfig
     )
 
     spacy: SpacyConfig = field(
@@ -150,7 +185,7 @@ class PreprocessingConfig:
 
 
 # ==========================================================
-# GLOBAL CONFIGURATION INSTANCE
+# GLOBAL CONFIGURATION
 # ==========================================================
 
 PREPROCESSING_CONFIG = PreprocessingConfig()
@@ -163,6 +198,7 @@ PREPROCESSING_CONFIG = PreprocessingConfig()
 __all__ = [
     "NormalizationConfig",
     "TokenFilterConfig",
+    "LinguisticFeatureConfig",
     "SpacyConfig",
     "PatternConfig",
     "LanguageConfig",

@@ -3,11 +3,11 @@ engine/nlp_types.py
 
 Core data models used by the NovaMind NLP Engine.
 
-This module contains ONLY data structures.
-No NLP processing logic belongs here.
+This module defines ONLY immutable data structures.
+No preprocessing, NLP, or fraud detection logic belongs here.
 
-Current Pipeline
-----------------
+Pipeline
+--------
 Raw Text
     ↓
 PreprocessedText
@@ -18,16 +18,12 @@ FeatureBundle
     ↓
 NLPResult
 
-Future versions will extend FeatureBundle with:
-    - IntentFeatures
-    - EntityFeatures
-    - StyleFeatures
-    - SentimentFeatures
-    - EmbeddingFeatures
-    - ConfidenceFeatures
-
-NLPResult should remain stable even as new
-feature extractors are introduced.
+Design Principles
+-----------------
+- PreprocessedText contains linguistic annotations only.
+- RuleFeatures contains deterministic fraud indicators.
+- FeatureBundle aggregates outputs from NLP analyzers.
+- NLPResult remains the stable public API.
 """
 
 from __future__ import annotations
@@ -37,34 +33,122 @@ from typing import Any, Dict, List, Optional
 
 
 # ==========================================================
+# TOKEN INFORMATION
+# ==========================================================
+
+@dataclass(slots=True, frozen=True)
+class TokenInfo:
+    """
+    Linguistic information for a single token.
+    """
+
+    text: str
+    lemma: str
+    pos: str
+
+
+# ==========================================================
+# NAMED ENTITY
+# ==========================================================
+
+@dataclass(slots=True, frozen=True)
+class NamedEntity:
+    """
+    Named entity extracted from text.
+    """
+
+    text: str
+    label: str
+
+    start_char: int
+    end_char: int
+
+    start_token: int
+    end_token: int
+
+
+# ==========================================================
+# DEPENDENCY RELATION
+# ==========================================================
+
+@dataclass(slots=True, frozen=True)
+class DependencyRelation:
+    """
+    Dependency relation between two tokens.
+    """
+
+    token: str
+    head: str
+    dependency: str
+
+
+# ==========================================================
+# NEGATION
+# ==========================================================
+
+@dataclass(slots=True, frozen=True)
+class NegationMarker:
+    """
+    Represents a detected negation.
+    """
+
+    negation_word: str
+    target: str
+
+
+# ==========================================================
 # PREPROCESSED TEXT
 # ==========================================================
 
 @dataclass(slots=True)
 class PreprocessedText:
     """
-    Output produced by TextPreprocessor.
+    Complete linguistic representation produced by TextPreprocessor.
 
-    This object contains normalized linguistic information
-    extracted from the raw transaction description.
+    Contains only language annotations and document statistics.
+    No fraud intelligence belongs here.
     """
 
-    # Original user input
+    # ------------------------------------------------------
+    # Raw Text
+    # ------------------------------------------------------
+
     original_text: str
 
-    # Normalized text
     clean_text: str
 
-    # Linguistic features
-    tokens: List[str] = field(default_factory=list)
-    lemmas: List[str] = field(default_factory=list)
-    pos_tags: List[str] = field(default_factory=list)
+    # ------------------------------------------------------
+    # Token-Level Information
+    # ------------------------------------------------------
+
+    tokens: List[TokenInfo] = field(default_factory=list)
+
     sentences: List[str] = field(default_factory=list)
 
-    # Basic statistics
+    # ------------------------------------------------------
+    # Linguistic Annotations
+    # ------------------------------------------------------
+
+    named_entities: List[NamedEntity] = field(default_factory=list)
+
+    dependency_relations: List[DependencyRelation] = field(
+        default_factory=list
+    )
+
+    noun_chunks: List[str] = field(default_factory=list)
+
+    negations: List[NegationMarker] = field(default_factory=list)
+
+    # ------------------------------------------------------
+    # Document Statistics
+    # ------------------------------------------------------
+
     token_count: int = 0
+
     sentence_count: int = 0
+
     character_count: int = 0
+
     unique_token_count: int = 0
 
 
@@ -76,30 +160,28 @@ class PreprocessedText:
 class RuleFeatures:
     """
     Deterministic features extracted by RuleEngine.
-
-    These features are fully explainable and contain
-    no machine learning predictions.
     """
 
-    # Matched keywords
     keyword_hits: List[str] = field(default_factory=list)
 
-    # Matched fraud categories
     matched_categories: List[str] = field(default_factory=list)
 
-    # Summary statistics
     keyword_count: int = 0
+
     category_count: int = 0
 
-    # Important fraud indicators
     urgency_flag: bool = False
 
-    # Category-specific keyword collections
     money_terms: List[str] = field(default_factory=list)
+
     payment_terms: List[str] = field(default_factory=list)
+
     account_terms: List[str] = field(default_factory=list)
+
     security_terms: List[str] = field(default_factory=list)
+
     legal_terms: List[str] = field(default_factory=list)
+
     scam_terms: List[str] = field(default_factory=list)
 
 
@@ -110,24 +192,18 @@ class RuleFeatures:
 @dataclass(slots=True)
 class FeatureBundle:
     """
-    Internal aggregation object used by NLPEngine.
-
-    Every NLP module contributes its output here.
-    As new analyzers are added, only this class
-    grows while NLPResult remains unchanged.
+    Aggregates outputs from all NLP analyzers.
     """
 
     preprocessing: Optional[PreprocessedText] = None
 
     rule_features: Optional[RuleFeatures] = None
 
-    # Future modules
+    # Future Intelligence Modules
     #
-    # intent_features: Optional[IntentFeatures] = None
-    # entity_features: Optional[EntityFeatures] = None
-    # style_features: Optional[StyleFeatures] = None
-    # sentiment_features: Optional[SentimentFeatures] = None
+    # semantic_features: Optional[SemanticFeatures] = None
     # embedding_features: Optional[EmbeddingFeatures] = None
+    # llm_features: Optional[LLMFeatures] = None
     # confidence_features: Optional[ConfidenceFeatures] = None
 
 
@@ -138,11 +214,7 @@ class FeatureBundle:
 @dataclass(slots=True)
 class NLPResult:
     """
-    Final output returned by NLPEngine.
-
-    The public interface remains stable while
-    FeatureBundle evolves as additional NLP
-    modules are introduced.
+    Stable public API returned by NLPEngine.
     """
 
     features: FeatureBundle
@@ -155,6 +227,10 @@ class NLPResult:
 # ==========================================================
 
 __all__ = [
+    "TokenInfo",
+    "NamedEntity",
+    "DependencyRelation",
+    "NegationMarker",
     "PreprocessedText",
     "RuleFeatures",
     "FeatureBundle",
