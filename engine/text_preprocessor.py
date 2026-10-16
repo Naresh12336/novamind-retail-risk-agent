@@ -178,6 +178,36 @@ class TextPreprocessor:
 
         return entities
 
+    def _extract_dependencies(
+            self,
+            doc: Doc,
+    ) -> List[DependencyRelation]:
+        """
+        Extract grammatical dependency relations from a spaCy document.
+
+        Each relation records the dependent token, its syntactic
+        head, and the dependency label assigned by spaCy.
+        """
+
+        if not self.config.linguistic.extract_dependencies:
+            return []
+
+        dependencies: List[DependencyRelation] = []
+
+        for token in doc:
+            if token.is_space:
+                continue
+
+            dependencies.append(
+                DependencyRelation(
+                    token=token.text,
+                    head=token.head.text,
+                    dependency=token.dep_,
+                )
+            )
+
+        return dependencies
+
     def _extract_tokens(
             self,
             doc: Doc,
@@ -213,6 +243,7 @@ class TextPreprocessor:
             tokens: List[TokenInfo],
             sentences: List[str],
             named_entities: List[NamedEntity],
+            dependency_relations: List[DependencyRelation],
     ) -> PreprocessedText:
         """
         Build the final PreprocessedText object from extracted
@@ -225,6 +256,7 @@ class TextPreprocessor:
             tokens=tokens,
             sentences=sentences,
             named_entities=named_entities,
+            dependency_relations=dependency_relations,
             token_count=len(tokens),
             sentence_count=len(sentences),
             character_count=len(clean_text),
@@ -262,10 +294,13 @@ class TextPreprocessor:
 
         named_entities = self._extract_named_entities(ner_doc)
 
+        dependency_relations = self._extract_dependencies(doc)
+
         return self._build_preprocessed_text(
             original_text=original_text,
             clean_text=clean_text,
             tokens=tokens,
             sentences=sentences,
             named_entities=named_entities,
+            dependency_relations=dependency_relations,
         )
