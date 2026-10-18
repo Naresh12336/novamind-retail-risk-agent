@@ -87,7 +87,7 @@ class LinguisticFeatureConfig:
 
     extract_dependencies: bool = True
 
-    extract_noun_chunks: bool = False
+    extract_noun_chunks: bool = True
 
     extract_negations: bool = True
 

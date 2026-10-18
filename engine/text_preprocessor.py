@@ -208,6 +208,64 @@ class TextPreprocessor:
 
         return dependencies
 
+    def _extract_noun_chunks(
+            self,
+            doc: Doc,
+    ) -> List[str]:
+        """
+        Extract noun chunks from a spaCy document.
+        """
+
+        if not self.config.linguistic.extract_noun_chunks:
+            return []
+
+        return [
+            chunk.text
+            for chunk in doc.noun_chunks
+        ]
+
+    def _extract_negations(
+            self,
+            doc: Doc,
+    ) -> List[NegationMarker]:
+        """
+        Extract negation markers and their associated targets.
+        """
+
+        if not self.config.linguistic.extract_negations:
+            return []
+
+        negations: List[NegationMarker] = []
+
+        for token in doc:
+            if token.is_space:
+                continue
+
+            is_dependency_negation = token.dep_ == "neg"
+
+            is_determiner_no = (
+                    token.lower_ == "no"
+                    and token.pos_ == "DET"
+                    and token.dep_ == "det"
+            )
+
+            if not (
+                    is_dependency_negation
+                    or is_determiner_no
+            ):
+                continue
+
+            target_token = token.head
+
+            negations.append(
+                NegationMarker(
+                    negation_word=token.text,
+                    target=target_token.text,
+                )
+            )
+
+        return negations
+
     def _extract_tokens(
             self,
             doc: Doc,
@@ -244,6 +302,8 @@ class TextPreprocessor:
             sentences: List[str],
             named_entities: List[NamedEntity],
             dependency_relations: List[DependencyRelation],
+            noun_chunks: List[str],
+            negations: List[NegationMarker],
     ) -> PreprocessedText:
         """
         Build the final PreprocessedText object from extracted
@@ -257,6 +317,8 @@ class TextPreprocessor:
             sentences=sentences,
             named_entities=named_entities,
             dependency_relations=dependency_relations,
+            noun_chunks=noun_chunks,
+            negations=negations,
             token_count=len(tokens),
             sentence_count=len(sentences),
             character_count=len(clean_text),
@@ -296,6 +358,10 @@ class TextPreprocessor:
 
         dependency_relations = self._extract_dependencies(doc)
 
+        noun_chunks = self._extract_noun_chunks(doc)
+
+        negations = self._extract_negations(doc)
+
         return self._build_preprocessed_text(
             original_text=original_text,
             clean_text=clean_text,
@@ -303,4 +369,6 @@ class TextPreprocessor:
             sentences=sentences,
             named_entities=named_entities,
             dependency_relations=dependency_relations,
+            noun_chunks=noun_chunks,
+            negations=negations,
         )
