@@ -58,6 +58,7 @@ class NamedEntity:
     """
 
     text: str
+    normalized_text: str
     label: str
 
     start_char: int

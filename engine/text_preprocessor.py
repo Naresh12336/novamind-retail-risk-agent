@@ -39,6 +39,8 @@ from engine.nlp_utils import (
     validate_text,
 )
 
+from engine.pattern_extractor import PatternExtractor
+
 
 class TextPreprocessor:
     """
@@ -48,6 +50,7 @@ class TextPreprocessor:
     def __init__(self) -> None:
         self.config = PREPROCESSING_CONFIG
         self.nlp = self._load_spacy_model()
+        self.pattern_extractor = PatternExtractor()
 
     def _load_spacy_model(self) -> Language:
         """
@@ -168,6 +171,7 @@ class TextPreprocessor:
             entities.append(
                 NamedEntity(
                     text=entity.text,
+                    normalized_text=entity.text.strip().casefold(),
                     label=entity.label_,
                     start_char=entity.start_char,
                     end_char=entity.end_char,
@@ -355,6 +359,18 @@ class TextPreprocessor:
         ner_doc = self.nlp(original_text)
 
         named_entities = self._extract_named_entities(ner_doc)
+
+        pattern_entities = self.pattern_extractor.extract(original_text)
+
+        named_entities.extend(pattern_entities)
+
+        named_entities.sort(
+            key=lambda entity: (
+                entity.start_char,
+                entity.end_char,
+                entity.label,
+            )
+        )
 
         dependency_relations = self._extract_dependencies(doc)
 
